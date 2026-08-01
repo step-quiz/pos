@@ -308,13 +308,25 @@ async function iniciarAlta() {
   const grupInicial = document.getElementById("selector-grup-alta").value;
   carregarGrup(grupInicial);
 
-  await carregarTextAlumnesOriginal();
-
+  // Els listeners es registren SEMPRE, encara que la càrrega del
+  // text original falli — així la pàgina és interactiva (escriure,
+  // veure la previsualització) independentment que el fetch vagi bé.
   document.getElementById("text-alumnes").addEventListener("input", processarText);
 
   document
     .getElementById("boto-descarregar-alumnes")
     .addEventListener("click", descarregarAlumnesActualitzat);
+
+  try {
+    await carregarTextAlumnesOriginal();
+  } catch (error) {
+    console.error("No s'ha pogut carregar alumnes.js:", error);
+    const avis = document.getElementById("avis-alta");
+    avis.textContent =
+      "No s'ha pogut llegir alumnes.js del servidor. Comprova que el fitxer " +
+      "és a la mateixa carpeta i que la pàgina s'obre per http(s), no com a fitxer local.";
+    avis.classList.add("alta-avis--error");
+  }
 }
 
 document.addEventListener("DOMContentLoaded", iniciarAlta);
