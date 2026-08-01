@@ -2,10 +2,8 @@
  * positius.js
  * ---------------------------------------------------------------
  * Tota la "feina" de l'aplicació: saber quina classe toca ara,
- * dibuixar la graella d'alumnes amb la disposició de l'aula,
- * assignar positius (amb el límit per tram horari) i mostrar el
- * resum tipus full de càlcul (una columna per cada dia+hora, més
- * la suma total).
+ * dibuixar la graella d'alumnes amb la disposició de l'aula, i
+ * assignar positius (amb el límit per tram horari).
  *
  * Els positius es guarden per "tram": un dia concret + una hora
  * concreta (p. ex. "2026-08-03" + "1a hora"). Així, si un mateix
@@ -19,6 +17,10 @@
  * Persistència: els positius es desen al localStorage del navegador,
  * així que es mantenen encara que es recarregui la pàgina. No hi ha
  * cap servidor: tot viu al navegador del professor.
+ *
+ * El full de càlcul en si NO es mostra en aquesta pàgina: es
+ * descarrega dia a dia com a Excel des del bloc "Baixada" (vegeu
+ * exportar.js), per enganxar-lo directament al full de qualificacions.
  * ---------------------------------------------------------------
  */
 
@@ -142,17 +144,6 @@ function tramActiuPerGrup(grupId) {
 
 function positiusDelTram(grupId, alumneId, tramId) {
   return dades?.[grupId]?.[tramId]?.[alumneId] || 0;
-}
-
-function positiusTotal(grupId, alumneId) {
-  const perTram = dades?.[grupId];
-  if (!perTram) return 0;
-
-  let total = 0;
-  for (const tramId in perTram) {
-    total += perTram[tramId][alumneId] || 0;
-  }
-  return total;
 }
 
 /**
@@ -367,7 +358,8 @@ function buitAlumne() {
 }
 
 /* ----------------------------------------------------------------
- * Resum tipus "full de càlcul": una columna per tram (dia+hora) + total
+ * Trams amb dades: usat des d'exportar.js per omplir el selector
+ * de "quin dia i hora vull descarregar".
  * ------------------------------------------------------------- */
 
 /**
@@ -379,74 +371,16 @@ function tramsAmbDades(grupId) {
   return Object.keys(perTram).sort(); // "AAAA-MM-DD__hora" ordena bé per data
 }
 
-/**
- * Text curt per a la capçalera d'una columna: "03/08 · 1a hora".
- */
-function formatarTramCurt(tramId) {
-  const { dataISO, hora } = descompondreTramId(tramId);
-  const [, m, d] = dataISO.split("-");
-  return `${d}/${m} · ${hora}`;
-}
-
-function actualitzarResum(grupId) {
-  const taula = document.getElementById("taula-resum");
-  const grup = GRUPS[grupId];
-  const trams = tramsAmbDades(grupId);
-
-  taula.innerHTML = "";
-
-  // Capçalera: Alumne | <tram1> | <tram2> | ... | Total
-  const capçalera = document.createElement("tr");
-  capçalera.appendChild(cel·laCapçalera("Alumne"));
-  for (const tram of trams) {
-    capçalera.appendChild(cel·laCapçalera(formatarTramCurt(tram)));
-  }
-  capçalera.appendChild(cel·laCapçalera("Total"));
-  taula.appendChild(capçalera);
-
-  // Una fila per alumne, en el mateix ordre que la llista de config.js
-  for (const alumne of grup.alumnes) {
-    const fila = document.createElement("tr");
-    fila.appendChild(cel·la(alumne.nom, "resum-nom"));
-
-    for (const tram of trams) {
-      const valor = dades[grupId]?.[tram]?.[alumne.id] || 0;
-      fila.appendChild(cel·la(valor === 0 ? "" : String(valor)));
-    }
-
-    const total = positiusTotal(grupId, alumne.id);
-    fila.appendChild(cel·la(String(total), "resum-total"));
-
-    taula.appendChild(fila);
-  }
-}
-
-function cel·laCapçalera(text) {
-  const th = document.createElement("th");
-  th.textContent = text;
-  return th;
-}
-
-function cel·la(text, classe) {
-  const td = document.createElement("td");
-  td.textContent = text;
-  if (classe) td.className = classe;
-  return td;
-}
-
 /* ----------------------------------------------------------------
  * Punt d'entrada
  * ------------------------------------------------------------- */
 
 /**
  * Actualitza tot allò que depèn de les dades de positius d'un grup
- * (el resum i el selector d'exportació), sense tornar a dibuixar la
- * graella d'alumnes. Es crida després de cada clic i en canviar de
- * grup.
+ * (per ara, només el selector d'exportació). Es crida després de
+ * cada clic i en canviar de grup.
  */
 function actualitzarDependentsDeDades(grupId) {
-  actualitzarResum(grupId);
-
   // Definida a exportar.js: refresca el selector de dia+hora a exportar.
   if (typeof actualitzarSelectorExportacio === "function") {
     actualitzarSelectorExportacio(grupId);

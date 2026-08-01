@@ -360,6 +360,25 @@ async function descarregarConfigActualitzat() {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Buida totes les assignacions del grup que s'està editant (deixa
+ * totes les taules buides). Demana confirmació abans, ja que no es
+ * pot desfer.
+ */
+function esborrarTotesLesAssignacions() {
+  const teAlgunaAssignacio = Object.keys(assignacions).length > 0;
+  if (!teAlgunaAssignacio) return;
+
+  const confirmat = confirm(
+    `Segur que vols esborrar les ${Object.keys(assignacions).length} assignacions de ${GRUPS[grupSetup].nom}? Aquesta acció no es pot desfer.`
+  );
+  if (!confirmat) return;
+
+  assignacions = {};
+  renderitzarGraella();
+  actualitzarComptador();
+}
+
 /* ----------------------------------------------------------------
  * Punt d'entrada
  * ------------------------------------------------------------- */
@@ -375,6 +394,10 @@ async function iniciarSetup() {
   document
     .getElementById("boto-descarregar-config")
     .addEventListener("click", descarregarConfigActualitzat);
+
+  document
+    .getElementById("boto-esborrar-tot")
+    .addEventListener("click", esborrarTotesLesAssignacions);
 
   // Tanca el desplegable flotant si es clica fora de qualsevol seient.
   document.addEventListener("click", (event) => {

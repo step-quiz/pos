@@ -26,20 +26,23 @@
 
 * , *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { height: 100%; }
+html, body { height: 100%; }
 
 body {
-  min-height: 100vh;
-  min-height: 100dvh;
+  display: flex;
   background: var(--bg-base);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   color: var(--text-1);
-  padding: 28px 18px 60px;
+  padding: 14px 18px;
+  overflow: hidden;
 }
 
 .contenidor {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 900px;
+  height: 100%;
   margin: 0 auto;
 }
 
@@ -51,11 +54,12 @@ header {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  flex: 0 0 auto;
 }
 
 header h1 {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.2px;
 }
@@ -78,9 +82,10 @@ header h1 {
 
 #info-horari {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-2);
-  margin-bottom: 22px;
+  margin-bottom: 10px;
+  flex: 0 0 auto;
 }
 
 .info-horari-dia {
@@ -91,11 +96,15 @@ header h1 {
 /* ── Targeta de grup ── */
 
 .targeta-grup {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
   background: var(--surface);
   border-radius: var(--r-card);
   box-shadow: var(--sh-card);
-  padding: 18px;
-  margin-bottom: 22px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
 }
 
 .targeta-grup-cap {
@@ -104,7 +113,8 @@ header h1 {
   align-items: baseline;
   justify-content: space-between;
   gap: 6px 10px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
+  flex: 0 0 auto;
 }
 
 #titol-grup {
@@ -123,13 +133,17 @@ header h1 {
 .graella-aula {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 8px;
 }
 
 .fila-aula {
   display: grid;
   grid-template-columns: repeat(var(--taules-per-fila, 3), 1fr);
-  gap: 10px;
+  gap: 8px;
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .taula-parella {
@@ -140,6 +154,7 @@ header h1 {
   background: var(--bg-base);
   border-radius: 10px;
   border: 1px dashed var(--border);
+  min-height: 0;
 }
 
 .alumne {
@@ -147,9 +162,9 @@ header h1 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-height: 64px;
-  padding: 8px 4px;
+  gap: 2px;
+  min-height: 0;
+  padding: 4px;
   border: none;
   border-radius: 8px;
   background: var(--surface);
@@ -177,11 +192,12 @@ header h1 {
 }
 
 .alumne-comptador {
-  font-size: 12px;
+  font-size: 20px; /* +70% respecte als 12px originals */
   font-weight: 800;
   color: var(--verd);
   letter-spacing: 1px;
-  min-height: 14px;
+  line-height: 1;
+  min-height: 22px;
 }
 
 .alumne--maxim {
@@ -206,78 +222,22 @@ header h1 {
   cursor: default;
 }
 
-/* ── Resum tipus full de càlcul ── */
-
-.targeta-resum {
-  background: var(--surface);
-  border-radius: var(--r-card);
-  box-shadow: var(--sh-card);
-  padding: 18px;
-  overflow-x: auto;
-}
-
-.targeta-resum h2 {
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--blau-fosc);
-  margin-bottom: 12px;
-}
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-th, td {
-  padding: 7px 10px;
-  text-align: center;
-  border-bottom: 1px solid var(--border);
-}
-
-th {
-  color: var(--text-2);
-  font-weight: 700;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-td.resum-nom, th:first-child {
-  text-align: left;
-  font-weight: 600;
-}
-
-td.resum-total {
-  font-weight: 800;
-  color: var(--blau);
-}
-
-tr:last-child td { border-bottom: none; }
-
 /* ── Exportar a Excel ── */
 
 .targeta-exportar {
+  flex: 0 0 auto;
   background: var(--surface);
   border-radius: var(--r-card);
   box-shadow: var(--sh-card);
-  padding: 18px;
-  margin-top: 18px;
+  padding: 12px 16px;
+  margin-top: 10px;
 }
 
 .targeta-exportar h2 {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--blau-fosc);
   margin-bottom: 8px;
-}
-
-.exportar-ajuda {
-  font-size: 13px;
-  color: var(--text-2);
-  margin-bottom: 14px;
-  max-width: 60ch;
 }
 
 .exportar-controls {
@@ -325,19 +285,14 @@ tr:last-child td { border-bottom: none; }
 /* ── Peu de pàgina ── */
 
 footer {
-  margin-top: 26px;
+  flex: 0 0 auto;
+  margin-top: 8px;
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-3);
 }
 
-/* ── Responsive ── */
-
-@media (max-width: 640px) {
-  .fila-aula {
-    grid-template-columns: 1fr;
-  }
-  .alumne-nom {
-    font-size: 14px;
-  }
-}
+/* Aquesta aplicació està pensada per fer-se servir des d'un ordinador
+   portàtil, amb tota la informació visible sense necessitat de fer
+   scroll vertical (per això el disseny fa servir alçades flexibles
+   en lloc de mides fixes). No s'ha optimitzat per a mòbil. */
