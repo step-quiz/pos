@@ -10,8 +10,8 @@
  * index.html. Tota la generació passa al navegador: no hi ha cap
  * servidor ni s'envien dades enlloc.
  *
- * Depèn de config.js (GRUPS, HORARI) i de positius.js (dades,
- * tramsAmbDades, crearTramId, descompondreTramId, positiusDelTram).
+ * Depèn d'alumnes.js (GRUPS) i de positius.js (dades, tramsAmbDades,
+ * crearTramId, descompondreTramId, positiusDelTram).
  * ---------------------------------------------------------------
  */
 
@@ -66,7 +66,7 @@ function formatarTramLlarg(tramId) {
 
 /**
  * Construeix les files de la columna a exportar: una fila per
- * alumne, en el mateix ordre que a config.js, amb el seu nombre de
+ * alumne, en el mateix ordre que a alumnes.js, amb el seu nombre de
  * positius en aquest tram concret.
  */
 function construirFilesExportacio(grupId, tramId) {

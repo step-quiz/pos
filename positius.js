@@ -10,9 +10,11 @@
  * grup té dues classes el mateix dia, cada hora té el seu propi
  * comptador i el seu propi límit — no se sumen entre elles.
  *
- * Depèn de les dades definides a config.js (GRUPS, HORARI,
- * DISPOSICIO_AULA, MAX_POSITIUS_DIA), que s'han de carregar abans
- * que aquest fitxer.
+ * Depèn de les dades definides a tres fitxers, que s'han de
+ * carregar abans que aquest:
+ *   - alumnes.js  (GRUPS: noms de classe i llista d'alumnes)
+ *   - seients.js  (DISPOSICIO_AULA, SEIENTS: on seu cada alumne)
+ *   - horari.js   (HORARI, MAX_POSITIUS_DIA)
  *
  * Persistència: els positius es desen al localStorage del navegador,
  * així que es mantenen encara que es recarregui la pàgina. No hi ha
@@ -246,19 +248,29 @@ function actualitzarInfoHorari() {
  * ------------------------------------------------------------- */
 
 /**
- * Agrupa la llista d'alumnes d'un grup per fila i taula, per poder
- * dibuixar-los amb la mateixa disposició física que a l'aula.
+ * Agrupa els seients d'un grup per fila i taula, per poder dibuixar
+ * cada alumne a la mateixa posició física que ocupa a l'aula.
+ * Retorna { [fila]: { [taula]: { esquerra: alumneId, dreta: alumneId } } }.
  */
-function agruparPerFilaITaula(alumnes) {
+function agruparSeientsPerFilaITaula(grupId) {
+  const seients = SEIENTS[grupId] || [];
   const files = {};
 
-  for (const alumne of alumnes) {
-    if (!files[alumne.fila]) files[alumne.fila] = {};
-    if (!files[alumne.fila][alumne.taula]) files[alumne.fila][alumne.taula] = {};
-    files[alumne.fila][alumne.taula][alumne.costat] = alumne;
+  for (const seient of seients) {
+    if (!files[seient.fila]) files[seient.fila] = {};
+    if (!files[seient.fila][seient.taula]) files[seient.fila][seient.taula] = {};
+    files[seient.fila][seient.taula][seient.costat] = seient.alumneId;
   }
 
   return files;
+}
+
+/**
+ * Retorna l'objecte alumne { id, nom } a partir del seu id, cercant
+ * dins la llista d'alumnes del grup (alumnes.js).
+ */
+function trobarAlumne(grupId, alumneId) {
+  return GRUPS[grupId].alumnes.find(a => a.id === alumneId);
 }
 
 function crearTargetaAlumne(grupId, alumne) {
@@ -314,15 +326,16 @@ function crearTargetaAlumne(grupId, alumne) {
 /**
  * Dibuixa la graella d'alumnes del grup indicat, amb 3 columnes de
  * taules (parelles) i tantes files com calgui, tal com estan asseguts
- * a l'aula.
+ * a l'aula. Els alumnes sense seient assignat (per exemple, un grup
+ * acabat de donar d'alta amb alta.html i encara sense passar per
+ * setup.html) simplement deixen la seva taula buida.
  */
 function renderitzarGraella(grupId) {
   const contenidor = document.getElementById("graella-aula");
   contenidor.innerHTML = "";
   contenidor.style.setProperty("--taules-per-fila", DISPOSICIO_AULA.parelles_per_fila);
 
-  const grup = GRUPS[grupId];
-  const filesAgrupades = agruparPerFilaITaula(grup.alumnes);
+  const filesAgrupades = agruparSeientsPerFilaITaula(grupId);
 
   for (let f = 1; f <= DISPOSICIO_AULA.files; f++) {
     const filaEl = document.createElement("div");
@@ -334,14 +347,14 @@ function renderitzarGraella(grupId) {
 
       const parella = filesAgrupades[f]?.[t] || {};
 
-      const esquerra = parella.esquerra;
-      const dreta = parella.dreta;
+      const alumneEsquerra = parella.esquerra ? trobarAlumne(grupId, parella.esquerra) : null;
+      const alumneDreta = parella.dreta ? trobarAlumne(grupId, parella.dreta) : null;
 
       taulaEl.appendChild(
-        esquerra ? crearTargetaAlumne(grupId, esquerra) : buitAlumne()
+        alumneEsquerra ? crearTargetaAlumne(grupId, alumneEsquerra) : buitAlumne()
       );
       taulaEl.appendChild(
-        dreta ? crearTargetaAlumne(grupId, dreta) : buitAlumne()
+        alumneDreta ? crearTargetaAlumne(grupId, alumneDreta) : buitAlumne()
       );
 
       filaEl.appendChild(taulaEl);

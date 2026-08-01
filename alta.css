@@ -1,0 +1,91 @@
+/* ------------------------------------------------------------------
+   alta.css
+   Estils propis d'alta.html. Reutilitza les variables i les classes
+   de style.css i setup.css (.contenidor, .targeta-grup,
+   .targeta-descarrega, .comptador-pendents, #boto-descarregar-config
+   compartit amb #boto-descarregar-alumnes...) i només hi afegeix el
+   que és específic d'aquesta pàgina: les dues columnes de text i
+   previsualització.
+   ------------------------------------------------------------------ */
+
+.targeta-alta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .targeta-alta {
+    grid-template-columns: 1fr;
+  }
+}
+
+.alta-columna {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.alta-etiqueta {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.alta-textarea {
+  width: 100%;
+  min-height: 340px;
+  resize: vertical;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-1);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.alta-textarea:focus {
+  outline: none;
+  border-color: var(--blau);
+}
+
+.alta-avis {
+  min-height: 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ambre);
+}
+
+.alta-avis.alta-avis--error {
+  color: #d64545;
+}
+
+.alta-previsualitzacio {
+  margin: 0;
+  padding: 12px 14px 12px 36px;
+  min-height: 340px;
+  max-height: 480px;
+  overflow-y: auto;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  background: var(--bg-base);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-1);
+}
+
+.alta-previsualitzacio li {
+  padding: 2px 0;
+}
+
+.alta-previsualitzacio:empty::before {
+  content: "Encara no hi ha cap nom per mostrar.";
+  display: block;
+  margin: -2px 0 0 -20px;
+  color: var(--text-3);
+  font-weight: 600;
+}
