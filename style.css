@@ -1,0 +1,343 @@
+/* ------------------------------------------------------------------
+   style.css
+   Full d'estils de l'aplicació de positius.
+   ------------------------------------------------------------------ */
+
+:root {
+  --blau:       #2f5d8a;
+  --blau-fosc:  #1c3a57;
+  --blau-suau:  #eaf1f8;
+  --verd:       #2f8a5d;
+  --verd-suau:  #e6f4ec;
+  --ambre:      #c98a1c;
+
+  --text-1: #1c2114;
+  --text-2: #545e5e;
+  --text-3: #8a9494;
+
+  --surface: #ffffff;
+  --bg-base: #f4f6f6;
+  --border:  rgba(20, 30, 40, 0.10);
+
+  --sh-card: 0 1px 2px rgba(20, 30, 40, 0.06), 0 4px 14px rgba(20, 30, 40, 0.06);
+  --r-card: 14px;
+  --r-btn: 100px;
+}
+
+* , *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; }
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-base);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  color: var(--text-1);
+  padding: 28px 18px 60px;
+}
+
+.contenidor {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ── Capçalera ── */
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+header h1 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.selector-wrap label {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-right: 6px;
+}
+
+#selector-grup {
+  font: inherit;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: var(--r-btn);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-1);
+}
+
+#info-horari {
+  display: block;
+  font-size: 13px;
+  color: var(--text-2);
+  margin-bottom: 22px;
+}
+
+.info-horari-dia {
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+/* ── Targeta de grup ── */
+
+.targeta-grup {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-card);
+  padding: 18px;
+  margin-bottom: 22px;
+}
+
+.targeta-grup-cap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 10px;
+  margin-bottom: 14px;
+}
+
+#titol-grup {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--blau-fosc);
+}
+
+.pista-clic {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* ── Graella de l'aula ── */
+
+.graella-aula {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fila-aula {
+  display: grid;
+  grid-template-columns: repeat(var(--taules-per-fila, 3), 1fr);
+  gap: 10px;
+}
+
+.taula-parella {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 6px;
+  background: var(--bg-base);
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+}
+
+.alumne {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 64px;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--sh-card);
+  cursor: pointer;
+  font: inherit;
+  color: var(--text-1);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.alumne:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(20, 30, 40, 0.12);
+}
+
+.alumne:active {
+  transform: translateY(0);
+}
+
+.alumne-nom {
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.15;
+}
+
+.alumne-comptador {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--verd);
+  letter-spacing: 1px;
+  min-height: 14px;
+}
+
+.alumne--maxim {
+  background: var(--verd-suau);
+}
+.alumne--maxim .alumne-comptador {
+  color: var(--verd);
+}
+
+.alumne--rebot {
+  animation: rebot 0.22s ease;
+}
+@keyframes rebot {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(-4px); }
+  60% { transform: translateX(4px); }
+}
+
+.alumne--buit {
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
+}
+
+/* ── Resum tipus full de càlcul ── */
+
+.targeta-resum {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-card);
+  padding: 18px;
+  overflow-x: auto;
+}
+
+.targeta-resum h2 {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--blau-fosc);
+  margin-bottom: 12px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+th, td {
+  padding: 7px 10px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  color: var(--text-2);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+td.resum-nom, th:first-child {
+  text-align: left;
+  font-weight: 600;
+}
+
+td.resum-total {
+  font-weight: 800;
+  color: var(--blau);
+}
+
+tr:last-child td { border-bottom: none; }
+
+/* ── Exportar a Excel ── */
+
+.targeta-exportar {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-card);
+  padding: 18px;
+  margin-top: 18px;
+}
+
+.targeta-exportar h2 {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--blau-fosc);
+  margin-bottom: 8px;
+}
+
+.exportar-ajuda {
+  font-size: 13px;
+  color: var(--text-2);
+  margin-bottom: 14px;
+  max-width: 60ch;
+}
+
+.exportar-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#selector-tram-exportar {
+  flex: 1 1 260px;
+  font: inherit;
+  font-size: 13px;
+  padding: 9px 12px;
+  border-radius: var(--r-btn);
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--text-1);
+}
+
+#boto-exportar {
+  flex: 0 0 auto;
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 9px 18px;
+  border-radius: var(--r-btn);
+  border: none;
+  background: var(--blau);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+#boto-exportar:hover:not(:disabled) {
+  background: var(--blau-fosc);
+  transform: translateY(-1px);
+}
+
+#boto-exportar:disabled,
+#selector-tram-exportar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Peu de pàgina ── */
+
+footer {
+  margin-top: 26px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 640px) {
+  .fila-aula {
+    grid-template-columns: 1fr;
+  }
+  .alumne-nom {
+    font-size: 14px;
+  }
+}

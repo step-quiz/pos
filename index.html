@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Positius — Prototip</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="contenidor">
+
+    <header>
+      <h1>➕ Positius</h1>
+      <div class="selector-wrap">
+        <label for="selector-grup">Grup:</label>
+        <select id="selector-grup"></select>
+      </div>
+    </header>
+
+    <span id="info-horari"></span>
+
+    <section class="targeta-grup">
+      <div class="targeta-grup-cap">
+        <h2 id="titol-grup"></h2>
+        <span class="pista-clic">Clic: +1 positiu · Clic dret: -1 positiu (màx. 3/dia)</span>
+      </div>
+      <div id="graella-aula" class="graella-aula"></div>
+    </section>
+
+    <section class="targeta-resum">
+      <h2>Resum (com el full de càlcul)</h2>
+      <table id="taula-resum"></table>
+    </section>
+
+    <section class="targeta-exportar">
+      <h2>Descarregar una columna en Excel</h2>
+      <p class="exportar-ajuda">
+        Tria un dia i una hora concrets: es descarrega un .xlsx amb una
+        fila per alumne, llest per enganxar com a columna al teu full
+        de càlcul.
+      </p>
+      <div class="exportar-controls">
+        <select id="selector-tram-exportar"></select>
+        <button id="boto-exportar" type="button">Descarrega Excel ⭳</button>
+      </div>
+    </section>
+
+    <footer>
+      Prototip amb dades inventades — cap alumne ni horari reals.
+    </footer>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="config.js"></script>
+  <script src="positius.js"></script>
+  <script src="exportar.js"></script>
+</body>
+</html>
