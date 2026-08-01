@@ -3,10 +3,11 @@
  * ---------------------------------------------------------------
  * Lògica de setup.html: assignar cada alumne d'un grup a una taula
  * concreta de l'aula (fila, taula, costat) i, al final, descarregar
- * un config.js nou amb aquestes posicions ja escrites.
+ * un seients.js nou amb aquestes posicions ja escrites.
  *
- * Depèn de les dades definides a config.js (GRUPS, DISPOSICIO_AULA),
- * que s'han de carregar abans que aquest fitxer.
+ * Depèn de les dades definides a alumnes.js (GRUPS) i a seients.js
+ * (DISPOSICIO_AULA, SEIENTS), que s'han de carregar abans que
+ * aquest fitxer.
  *
  * Aquesta pàgina NO toca el localStorage de positius ni res
  * relacionat amb positius.js: només serveix per decidir on seu
@@ -26,11 +27,11 @@ let grupSetup = null;
 // seientId té la forma "fila-taula-costat", p. ex. "1-2-esquerra"
 let assignacions = {};
 
-// Text font original de config.js, carregat amb fetch. El fem
+// Text font original de seients.js, carregat amb fetch. El fem
 // servir com a plantilla per generar el fitxer final: només hi
-// reemplacem els números de fila/taula/costat, i deixem la resta
-// (comentaris, ordre, HORARI, MAX_POSITIUS_DIA...) exactament igual.
-let textConfigOriginal = null;
+// reemplacem el bloc SEIENTS[grupId], i deixem la resta
+// (comentaris, DISPOSICIO_AULA, altres grups...) exactament igual.
+let textSeientsOriginal = null;
 
 /* ----------------------------------------------------------------
  * Seients: identificador i utilitats
@@ -85,19 +86,17 @@ function inicialitzarSelectorGrups() {
 
 /**
  * Carrega un grup a l'editor: inicialitza `assignacions` a partir
- * de les posicions que ja tingui el grup a config.js (si en té) i
+ * de les posicions que ja tingui el grup a seients.js (si en té) i
  * dibuixa la graella de seients.
  */
 function carregarGrup(grupId) {
   grupSetup = grupId;
   assignacions = {};
 
-  for (const alumne of GRUPS[grupId].alumnes) {
-    const tePosicio = alumne.fila && alumne.taula && alumne.costat;
-    if (tePosicio) {
-      const seientId = crearSeientId(alumne.fila, alumne.taula, alumne.costat);
-      assignacions[seientId] = alumne.id;
-    }
+  const seientsGrup = SEIENTS[grupId] || [];
+  for (const seient of seientsGrup) {
+    const seientId = crearSeientId(seient.fila, seient.taula, seient.costat);
+    assignacions[seientId] = seient.alumneId;
   }
 
   renderitzarGraella();
@@ -271,88 +270,110 @@ function actualitzarComptador() {
 }
 
 /* ----------------------------------------------------------------
- * Generació del config.js final
+ * Generació del seients.js final
  * ------------------------------------------------------------- */
 
 /**
- * Carrega el text font original de config.js (una sola vegada) per
+ * Carrega el text font original de seients.js (una sola vegada) per
  * fer-lo servir de plantilla en generar el fitxer final.
  */
-async function carregarTextConfigOriginal() {
-  const resposta = await fetch("config.js");
-  textConfigOriginal = await resposta.text();
+async function carregarTextSeientsOriginal() {
+  const resposta = await fetch("seients.js");
+  textSeientsOriginal = await resposta.text();
 }
 
 /**
- * Retorna el codi per a un únic alumne amb les seves noves
- * posicions, amb el mateix estil que ja fem servir a config.js:
- * { id: "1A-01", nom: "Martina",  fila: 1, taula: 1, costat: "esquerra" }
- *
- * amplariaNom és l'amplada (en caràcters) del "nom": "X", camp més
- * llarg, per alinear la columna "fila:" de totes les línies del
- * grup, tal com ja fa el fitxer original escrit a mà.
+ * Retorna el codi per a un únic seient ocupat, amb el mateix estil
+ * que ja fem servir a seients.js:
+ * { alumneId: "1ESOA-01", fila: 1, taula: 1, costat: "esquerra" }
  */
-function generarLiniaAlumne(alumne, fila, taula, costat, amplariaNom) {
-  const idText = JSON.stringify(alumne.id);
-  const nomText = (JSON.stringify(alumne.nom) + ",").padEnd(amplariaNom + 1);
-  return `{ id: ${idText}, nom: ${nomText} fila: ${fila}, taula: ${taula}, costat: ${JSON.stringify(costat)} }`;
+function generarLiniaSeient(alumneId, fila, taula, costat) {
+  return `    { alumneId: ${JSON.stringify(alumneId)}, fila: ${fila}, taula: ${taula}, costat: ${JSON.stringify(costat)} }`;
 }
 
 /**
- * Substitueix, dins el text original de config.js, l'objecte de
- * cada alumne del grup configurat per una versió amb la seva nova
- * posició. La resta del fitxer (comentaris, altres grups, HORARI...)
- * queda intacta.
+ * Retorna el codi del bloc SEIENTS[grupId] = [ ... ], amb un seient
+ * per línia, ordenats per fila/taula/costat (mateix ordre que ja
+ * feia servir el fitxer original escrit a mà).
  */
-function generarTextConfigActualitzat(grupId) {
-  let text = textConfigOriginal;
+function generarBlocSeients(grupId) {
+  const ordreCostat = { esquerra: 0, dreta: 1 };
+  const seientsOrdenats = Object.entries(assignacions)
+    .map(([seientId, alumneId]) => {
+      const [fila, taula, costat] = seientId.split("-");
+      return { fila: Number(fila), taula: Number(taula), costat, alumneId };
+    })
+    .sort((a, b) =>
+      a.fila - b.fila ||
+      a.taula - b.taula ||
+      ordreCostat[a.costat] - ordreCostat[b.costat]
+    );
 
-  // Amplada del "nom": més llarg del grup, per alinear la columna
-  // "fila:" de totes les línies igual que a l'original.
-  const amplariaNom = Math.max(
-    ...GRUPS[grupId].alumnes.map(a => (JSON.stringify(a.nom) + ",").length)
+  if (seientsOrdenats.length === 0) {
+    return `"${grupId}": []`;
+  }
+
+  const linies = seientsOrdenats.map(s =>
+    generarLiniaSeient(s.alumneId, s.fila, s.taula, s.costat)
   );
 
-  for (const alumne of GRUPS[grupId].alumnes) {
-    // Localitzem la línia sencera d'aquest alumne buscant el seu id
-    // literal, tal com apareix escrit a config.js.
-    const idText = JSON.stringify(alumne.id);
-    const patroLinia = new RegExp(
-      String.raw`\{\s*id:\s*${idText}\s*,[^\n]*\}`
-    );
-
-    const seientId = Object.keys(assignacions).find(
-      sid => assignacions[sid] === alumne.id
-    );
-
-    if (!seientId) continue; // no hauria de passar (el botó està desactivat si en falta algun)
-
-    const [fila, taula, costat] = seientId.split("-");
-    const novaLinia = generarLiniaAlumne(alumne, Number(fila), Number(taula), costat, amplariaNom);
-
-    if (!patroLinia.test(text)) {
-      console.error(`No s'ha trobat l'alumne ${alumne.id} al text de config.js`);
-      continue;
-    }
-
-    text = text.replace(patroLinia, novaLinia);
-  }
-
-  return text;
+  return `"${grupId}": [\n${linies.join(",\n")}\n  ]`;
 }
 
-async function descarregarConfigActualitzat() {
-  if (!textConfigOriginal) {
-    await carregarTextConfigOriginal();
+/**
+ * Substitueix, dins el text original de seients.js, el bloc
+ * "GRUPID": [ ... ] del grup configurat per la llista nova de
+ * seients. La resta del fitxer (comentaris, DISPOSICIO_AULA, altres
+ * grups) queda intacta. Es localitza el grup pel seu identificador
+ * literal (p. ex. "1ESOA":) i es reemplaça tot el bloc "[...]" que
+ * hi apareix a continuació, comptant claudàtors per trobar-ne el
+ * tancament correcte.
+ */
+function generarTextSeientsActualitzat(grupId) {
+  const text = textSeientsOriginal;
+  const idText = JSON.stringify(grupId);
+
+  const patroIniciGrup = new RegExp(String.raw`${idText}\s*:\s*\[`);
+  const matchInici = patroIniciGrup.exec(text);
+
+  if (!matchInici) {
+    throw new Error(`No s'ha trobat el grup ${grupId} a seients.js`);
   }
 
-  const text = generarTextConfigActualitzat(grupSetup);
+  const inicíClaudator = matchInici.index + matchInici[0].length;
+  let profunditat = 1;
+  let posicio = inicíClaudator;
+
+  while (profunditat > 0 && posicio < text.length) {
+    const caracter = text[posicio];
+    if (caracter === "[") profunditat++;
+    if (caracter === "]") profunditat--;
+    posicio++;
+  }
+
+  if (profunditat !== 0) {
+    throw new Error(`No s'ha pogut tancar la llista de seients del grup ${grupId} a seients.js`);
+  }
+
+  const abans = text.slice(0, matchInici.index);
+  const despres = text.slice(posicio);
+  const blocNou = generarBlocSeients(grupId);
+
+  return `${abans}${blocNou}${despres}`;
+}
+
+async function descarregarSeientsActualitzat() {
+  if (!textSeientsOriginal) {
+    await carregarTextSeientsOriginal();
+  }
+
+  const text = generarTextSeientsActualitzat(grupSetup);
   const blob = new Blob([text], { type: "text/javascript;charset=utf-8" });
   const url = URL.createObjectURL(blob);
 
   const enllaç = document.createElement("a");
   enllaç.href = url;
-  enllaç.download = "config.js";
+  enllaç.download = "seients.js";
   document.body.appendChild(enllaç);
   enllaç.click();
   document.body.removeChild(enllaç);
@@ -389,11 +410,12 @@ async function iniciarSetup() {
   const grupInicial = document.getElementById("selector-grup-setup").value;
   carregarGrup(grupInicial);
 
-  await carregarTextConfigOriginal();
-
+  // Els listeners es registren SEMPRE, encara que la càrrega del
+  // text original falli — així la pàgina és interactiva (assignar
+  // seients, veure comptadors) independentment que el fetch vagi bé.
   document
     .getElementById("boto-descarregar-config")
-    .addEventListener("click", descarregarConfigActualitzat);
+    .addEventListener("click", descarregarSeientsActualitzat);
 
   document
     .getElementById("boto-esborrar-tot")
@@ -405,6 +427,17 @@ async function iniciarSetup() {
       tancarSelectorObert();
     }
   });
+
+  try {
+    await carregarTextSeientsOriginal();
+  } catch (error) {
+    console.error("No s'ha pogut carregar seients.js:", error);
+    const contenidor = document.getElementById("comptador-pendents");
+    contenidor.textContent =
+      "No s'ha pogut llegir seients.js del servidor. Comprova que el fitxer " +
+      "és a la mateixa carpeta i que la pàgina s'obre per http(s), no com a fitxer local.";
+    contenidor.classList.remove("comptador--complet");
+  }
 }
 
 document.addEventListener("DOMContentLoaded", iniciarSetup);
