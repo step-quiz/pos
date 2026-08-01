@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dona d'alta un grup — Positius</title>
+  <title>Alta de classe — Positius</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="setup.css" />
   <link rel="stylesheet" href="alta.css" />
 </head>
 <body>
@@ -13,7 +12,7 @@
   <div class="contenidor">
 
     <header>
-      <h1>📋 Dona d'alta un grup</h1>
+      <h1>📋 Alta de classe</h1>
       <div class="header-controls">
         <div class="selector-wrap">
           <label for="selector-grup-alta">Grup:</label>
@@ -24,35 +23,32 @@
       </div>
     </header>
 
-    <section class="targeta-grup targeta-alta">
+    <span id="estat-grup-actual" class="estat-grup-actual"></span>
 
-      <div class="alta-columna">
-        <label for="text-alumnes" class="alta-etiqueta">
-          Enganxa aquí la llista d'alumnes (un nom per línia, en l'ordre que vulguis)
-        </label>
+    <section class="targeta-alta">
+      <div class="columna-entrada">
+        <h2>Enganxa la llista de noms</h2>
+        <p class="alta-ajuda">Un alumne per línia, en l'ordre que vulguis.</p>
         <textarea
-          id="text-alumnes"
-          class="alta-textarea"
-          rows="16"
+          id="textarea-noms"
           placeholder="Martina&#10;Youssef&#10;Laia&#10;Bruno&#10;…"
         ></textarea>
-        <span id="avis-alta" class="alta-avis"></span>
       </div>
 
-      <div class="alta-columna">
-        <span id="etiqueta-previsualitzacio" class="alta-etiqueta">Previsualització</span>
-        <ol id="previsualitzacio-alumnes" class="alta-previsualitzacio"></ol>
+      <div class="columna-previsualitzacio">
+        <h2>Previsualització</h2>
+        <span id="previsualitzacio-comptador" class="previsualitzacio-comptador"></span>
+        <ol id="previsualitzacio-llista" class="previsualitzacio-llista"></ol>
       </div>
-
     </section>
 
     <section class="targeta-descarrega">
-      <span id="comptador-alta" class="comptador-pendents"></span>
-      <div class="targeta-descarrega-botons">
-        <button id="boto-descarregar-alumnes" type="button" disabled>
-          Descarrega alumnes.js ⭳
-        </button>
-      </div>
+      <span class="avis-substitucio">
+        Substitueix per complet la llista actual del grup. Després caldrà refer el Setup.
+      </span>
+      <button id="boto-descarregar-alumnes" type="button" disabled>
+        Descarrega alumnes.js ⭳
+      </button>
     </section>
 
   </div>

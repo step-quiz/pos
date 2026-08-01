@@ -1,91 +1,147 @@
 /* ------------------------------------------------------------------
    alta.css
-   Estils propis d'alta.html. Reutilitza les variables i les classes
-   de style.css i setup.css (.contenidor, .targeta-grup,
-   .targeta-descarrega, .comptador-pendents, #boto-descarregar-config
-   compartit amb #boto-descarregar-alumnes...) i només hi afegeix el
-   que és específic d'aquesta pàgina: les dues columnes de text i
-   previsualització.
+   Estils propis d'alta.html. Reutilitza les variables de style.css
+   i només hi afegeix el que és específic d'aquesta pàgina: el
+   formulari de dues columnes i la previsualització de la llista.
    ------------------------------------------------------------------ */
+
+.estat-grup-actual {
+  display: block;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 10px;
+  flex: 0 0 auto;
+}
+
+/* ── Targeta principal: entrada + previsualització ── */
 
 .targeta-alta {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  align-items: start;
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-card);
+  padding: 16px;
+  margin-bottom: 10px;
 }
 
-@media (max-width: 720px) {
-  .targeta-alta {
-    grid-template-columns: 1fr;
-  }
-}
-
-.alta-columna {
+.columna-entrada,
+.columna-previsualitzacio {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 0;
+  min-height: 0;
 }
 
-.alta-etiqueta {
-  font-size: 13px;
-  font-weight: 700;
+.targeta-alta h2 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--blau-fosc);
+  margin-bottom: 6px;
+  flex: 0 0 auto;
+}
+
+.alta-ajuda {
+  font-size: 12px;
   color: var(--text-2);
+  margin-bottom: 8px;
+  flex: 0 0 auto;
 }
 
-.alta-textarea {
-  width: 100%;
-  min-height: 340px;
-  resize: vertical;
-  padding: 12px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-1);
+#textarea-noms {
+  flex: 1 1 auto;
+  min-height: 0;
+  resize: none;
   font: inherit;
   font-size: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--text-1);
   line-height: 1.5;
 }
 
-.alta-textarea:focus {
-  outline: none;
-  border-color: var(--blau);
+#textarea-noms:focus {
+  outline: 2px solid var(--blau);
+  outline-offset: -1px;
 }
 
-.alta-avis {
-  min-height: 18px;
+.previsualitzacio-comptador {
+  display: block;
   font-size: 12px;
-  font-weight: 600;
-  color: var(--ambre);
+  color: var(--text-2);
+  margin-bottom: 6px;
+  flex: 0 0 auto;
 }
 
-.alta-avis.alta-avis--error {
-  color: #d64545;
-}
-
-.alta-previsualitzacio {
-  margin: 0;
-  padding: 12px 14px 12px 36px;
-  min-height: 340px;
-  max-height: 480px;
+.previsualitzacio-llista {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
-  border-radius: 8px;
+  list-style: none;
+  padding: 4px;
+  border-radius: 10px;
   border: 1px dashed var(--border);
   background: var(--bg-base);
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--text-1);
 }
 
-.alta-previsualitzacio li {
-  padding: 2px 0;
-}
-
-.alta-previsualitzacio:empty::before {
-  content: "Encara no hi ha cap nom per mostrar.";
-  display: block;
-  margin: -2px 0 0 -20px;
-  color: var(--text-3);
+.previsualitzacio-llista li {
+  padding: 4px 8px;
+  font-size: 13px;
   font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.previsualitzacio-llista li:last-child {
+  border-bottom: none;
+}
+
+/* ── Bloc de descàrrega ── */
+
+.targeta-descarrega {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-card);
+  padding: 16px 18px;
+}
+
+.avis-substitucio {
+  font-size: 12px;
+  color: var(--ambre);
+  font-weight: 600;
+  max-width: 55ch;
+}
+
+#boto-descarregar-alumnes {
+  flex: 0 0 auto;
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 20px;
+  border-radius: var(--r-btn);
+  border: none;
+  background: var(--blau);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+#boto-descarregar-alumnes:hover:not(:disabled) {
+  background: var(--blau-fosc);
+  transform: translateY(-1px);
+}
+
+#boto-descarregar-alumnes:disabled {
+  background: var(--text-3);
+  cursor: not-allowed;
+  opacity: 0.7;
 }

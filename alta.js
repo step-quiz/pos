@@ -2,40 +2,32 @@
  * alta.js
  * ---------------------------------------------------------------
  * Lògica d'alta.html: donar d'alta (o substituir per complet) la
- * llista d'alumnes d'un grup a partir d'un copy-paste de noms, un
- * per línia, i descarregar un alumnes.js nou amb aquesta llista ja
- * escrita.
+ * llista d'alumnes d'un grup, enganxant els noms des del full de
+ * càlcul del professor, i descarregar un alumnes.js nou amb aquesta
+ * llista ja escrita.
  *
  * Depèn de les dades definides a alumnes.js (GRUPS), que s'ha de
- * carregar abans que aquest fitxer.
+ * carregar abans que aquest fitxer, només per poder mostrar quins
+ * grups ja existeixen i quants alumnes tenen ara.
  *
- * Igual que setup.js amb seients.js: aquesta pàgina llegeix el text
- * font ORIGINAL d'alumnes.js amb fetch i, en descarregar, hi
- * substitueix únicament el bloc del grup triat — la resta del
- * fitxer (comentaris, altres grups) queda intacta.
- *
- * Important: substituir la llista d'un grup li assigna ids nous a
- * tots els seus alumnes (GRUPID-01, GRUPID-02...). Per això, després
- * de fer una alta, cal tornar a passar per setup.html per assignar
- * seients a aquest grup — els seients vells (seients.js) fan
- * referència a ids que ja no existeixen i simplement deixaran de
- * mostrar-se, tal com ja preveu positius.js.
+ * Important: quan es dona d'alta un grup, els identificadors dels
+ * seus alumnes es regeneren des de zero amb un sufix únic d'aquesta
+ * alta (grupId-XXXX-01, grupId-XXXX-02...), perquè mai coincideixin
+ * amb els d'una alta anterior del mateix grup. Això vol dir que
+ * qualsevol seients.js existent per a aquest grup queda
+ * desactualitzat: cal tornar a fer setup.html per tornar a assignar
+ * seients. Aquesta pàgina no toca seients.js per res.
  * ---------------------------------------------------------------
  */
 
-/* ----------------------------------------------------------------
- * Estat en memòria
- * ------------------------------------------------------------- */
+// Els tres grups disponibles. Coincideixen amb els que ja existeixen
+// a alumnes.js — aquesta llista només decideix què es mostra al
+// selector, no d'on surten les dades.
+const GRUPS_DISPONIBLES = ["1ESOA", "1ESOB", "4ESO"];
 
-// Grup que s'està donant d'alta ara mateix
-let grupAlta = null;
-
-// Llista de noms ja netejada (sense línies buides), tal com es farà
-// servir per generar el fitxer final
-let nomsActuals = [];
-
-// Text font original d'alumnes.js, carregat amb fetch. Fet servir
-// com a plantilla per generar el fitxer final.
+// Text font original d'alumnes.js, carregat amb fetch, usat com a
+// plantilla per generar el fitxer final (vegeu setup.js per al
+// mateix patró amb seients.js).
 let textAlumnesOriginal = null;
 
 /* ----------------------------------------------------------------
@@ -46,114 +38,87 @@ function inicialitzarSelectorGrups() {
   const selector = document.getElementById("selector-grup-alta");
   selector.innerHTML = "";
 
-  for (const grupId in GRUPS) {
+  for (const grupId of GRUPS_DISPONIBLES) {
     const opcio = document.createElement("option");
     opcio.value = grupId;
-    opcio.textContent = GRUPS[grupId].nom;
+    const nomActual = GRUPS[grupId]?.nom || grupId;
+    opcio.textContent = nomActual;
     selector.appendChild(opcio);
   }
 
-  selector.addEventListener("change", () => {
-    carregarGrup(selector.value);
-  });
+  selector.addEventListener("change", actualitzarEstatGrupActual);
 }
 
 /**
- * Canvia de grup: no toca el textarea (l'usuari pot voler enganxar
- * la mateixa llista a un altre grup, o simplement l'ha canviat sense
- * voler), només actualitza el títol de previsualització i tornar a
- * validar/comptar amb el grup nou.
+ * Mostra sota el selector quants alumnes té ara mateix el grup
+ * triat, com a referència abans de substituir-los.
  */
-function carregarGrup(grupId) {
-  grupAlta = grupId;
+function actualitzarEstatGrupActual() {
+  const grupId = document.getElementById("selector-grup-alta").value;
+  const contenidor = document.getElementById("estat-grup-actual");
 
-  document.getElementById("etiqueta-previsualitzacio").textContent =
-    `Previsualització — així quedarà ${GRUPS[grupId].nom}`;
+  const grup = GRUPS[grupId];
+  const nAlumnesActuals = grup ? grup.alumnes.length : 0;
 
-  processarText();
-}
-
-/* ----------------------------------------------------------------
- * Processament del textarea: noms → previsualització
- * ------------------------------------------------------------- */
-
-/**
- * Neteja el text enganxat: una línia per nom, treu espais sobrants
- * a cada línia i descarta les línies completament buides (per si hi
- * ha salts de línia de més en enganxar des d'un full de càlcul).
- */
-function netejarNoms(textCru) {
-  return textCru
-    .split("\n")
-    .map(linia => linia.trim())
-    .filter(linia => linia.length > 0);
-}
-
-/**
- * Es crida cada vegada que canvia el text o el grup seleccionat:
- * recalcula la llista de noms, la previsualització, els avisos i
- * l'estat del botó de descàrrega.
- */
-function processarText() {
-  const textarea = document.getElementById("text-alumnes");
-  nomsActuals = netejarNoms(textarea.value);
-
-  renderitzarPrevisualitzacio();
-  actualitzarAvisos();
-}
-
-function renderitzarPrevisualitzacio() {
-  const llista = document.getElementById("previsualitzacio-alumnes");
-  llista.innerHTML = "";
-
-  for (const nom of nomsActuals) {
-    const item = document.createElement("li");
-    item.textContent = nom;
-    llista.appendChild(item);
+  if (nAlumnesActuals === 0) {
+    contenidor.textContent = `${grup?.nom || grupId} encara no té cap alumne donat d'alta.`;
+  } else {
+    contenidor.textContent =
+      `${grup.nom} té ara mateix ${nAlumnesActuals} alumnes. ` +
+      `Si continues, es SUBSTITUIRAN completament per la llista nova.`;
   }
 }
 
+/* ----------------------------------------------------------------
+ * Parsejar la llista enganxada
+ * ------------------------------------------------------------- */
+
 /**
- * Mostra avisos no bloquejants (massa alumnes per a l'aula) i
- * l'estat del comptador, i activa/desactiva el botó de descàrrega.
- * Un grup buit és vàlid per descarregar (per exemple, si vols
- * deixar el grup momentàniament sense alumnes), però mai amb el
- * textarea completament buit d'entrada — per evitar buidar un grup
- * per error amb un clic accidental.
+ * Parseja el text enganxat a un array de noms nets: una línia per
+ * alumne, sense línies buides ni espais sobrants als extrems.
+ * Admet que s'hagi enganxat amb tabulacions al darrere (per exemple,
+ * si l'usuari ha copiat més d'una columna del full de càlcul per
+ * error): només es queda amb la primera columna de cada línia.
  */
-function actualitzarAvisos() {
-  const avis = document.getElementById("avis-alta");
-  const comptador = document.getElementById("comptador-alta");
+function parsejarNoms(text) {
+  return text
+    .split("\n")
+    .map(linia => linia.split("\t")[0].trim())
+    .filter(nom => nom.length > 0);
+}
+
+/**
+ * Refresca la previsualització de la llista d'alumnes a partir del
+ * contingut actual del textarea.
+ */
+function actualitzarPrevisualitzacio() {
+  const text = document.getElementById("textarea-noms").value;
+  const noms = parsejarNoms(text);
+
+  const contenidor = document.getElementById("previsualitzacio-llista");
+  const comptador = document.getElementById("previsualitzacio-comptador");
   const boto = document.getElementById("boto-descarregar-alumnes");
-  const capacitatMaxima = DISPOSICIO_AULA?.files * DISPOSICIO_AULA?.parelles_per_fila * 2 || null;
 
-  comptador.textContent = nomsActuals.length === 1
-    ? "1 alumne."
-    : `${nomsActuals.length} alumnes.`;
+  contenidor.innerHTML = "";
 
-  if (nomsActuals.length === 0) {
-    avis.textContent = "Enganxa almenys un nom per poder descarregar.";
-    avis.classList.remove("alta-avis--error");
+  if (noms.length === 0) {
+    comptador.textContent = "Encara no has enganxat cap nom.";
     boto.disabled = true;
     return;
   }
 
-  if (capacitatMaxima && nomsActuals.length > capacitatMaxima) {
-    avis.textContent =
-      `Atenció: ${nomsActuals.length} alumnes superen les ${capacitatMaxima} places de l'aula ` +
-      `(${DISPOSICIO_AULA.files} files × ${DISPOSICIO_AULA.parelles_per_fila} taules × 2). ` +
-      `Es descarregarà igualment, però a setup.html en quedaran alguns sense seient.`;
-    avis.classList.remove("alta-avis--error");
-  } else {
-    avis.textContent = "";
-    avis.classList.remove("alta-avis--error");
-  }
-
+  comptador.textContent = `${noms.length} alumnes detectats, en aquest ordre:`;
   boto.disabled = false;
+
+  noms.forEach((nom, index) => {
+    const item = document.createElement("li");
+    item.textContent = `${index + 1}. ${nom}`;
+    contenidor.appendChild(item);
+  });
 }
 
 /* ----------------------------------------------------------------
- * Generació del alumnes.js final
+ * Generació de l'alumnes.js final
  * ------------------------------------------------------------- */
 
 /**
@@ -166,109 +131,89 @@ async function carregarTextAlumnesOriginal() {
 }
 
 /**
- * Genera els ids nous per al grup: GRUPID-01, GRUPID-02... en el
- * mateix ordre en què s'han enganxat els noms. Substituir la llista
- * sempre regenera els ids (encara que un nom coincideixi amb un
- * alumne anterior), ja que no hi ha manera fiable de saber si és
- * "el mateix" alumne o un de nou amb el mateix nom.
+ * Retorna un sufix curt (4 xifres) que identifica aquesta alta en
+ * concret, perquè els ids generats ara no coincideixin per atzar
+ * amb els d'una alta anterior del mateix grup (per exemple, si
+ * abans hi havia 30 alumnes i ara se'n donen d'alta 5, els nous ids
+ * "1ESOA-01".."1ESOA-05" no han de coincidir amb els 5 primers
+ * alumnes de l'alta anterior: si coincidissin, setup.html podria
+ * mostrar erròniament seients "ja assignats" que en realitat
+ * pertanyien a un altre alumne).
  */
-function generarIdsNous(grupId, noms) {
-  const xifres = String(noms.length).length < 2 ? 2 : String(noms.length).length;
-  return noms.map((nom, index) => ({
-    id: `${grupId}-${String(index + 1).padStart(xifres, "0")}`,
-    nom
-  }));
+function generarSufixAlta() {
+  return String(Date.now()).slice(-4);
 }
 
 /**
- * Retorna el codi del bloc d'alumnes d'un grup, amb el mateix estil
- * que ja fem servir a alumnes.js:
- *   alumnes: [
- *     { id: "1ESOA-01", nom: "Martina" },
- *     ...
- *   ]
+ * Retorna el codi (cos de l'array, sense claudàtors) amb un alumne
+ * per línia, en el mateix estil que ja fem servir a alumnes.js:
+ *   { id: "1ESOA-7042-01", nom: "Martina" },
+ *
+ * Els identificadors es regeneren des de zero a cada alta, numerats
+ * segons l'ordre en què s'han enganxat els noms i marcats amb el
+ * sufix d'aquesta alta perquè no coincideixin amb els d'una alta
+ * anterior (vegeu generarSufixAlta).
  */
-function generarBlocAlumnes(alumnesNous) {
-  if (alumnesNous.length === 0) {
-    return "alumnes: []";
-  }
-  const linies = alumnesNous.map(
-    a => `      { id: ${JSON.stringify(a.id)}, nom: ${JSON.stringify(a.nom)} }`
-  );
-  return `alumnes: [\n${linies.join(",\n")}\n    ]`;
+function generarCosArrayAlumnes(grupId, noms) {
+  const sufixAlta = generarSufixAlta();
+
+  const linies = noms.map((nom, index) => {
+    const numero = String(index + 1).padStart(2, "0");
+    const id = `${grupId}-${sufixAlta}-${numero}`;
+    return `      { id: ${JSON.stringify(id)}, nom: ${JSON.stringify(nom)} }`;
+  });
+
+  return linies.join(",\n");
 }
 
 /**
  * Substitueix, dins el text original d'alumnes.js, el bloc
- * "alumnes: [ ... ]" del grup triat per la llista nova. La resta
- * del fitxer (comentaris, "nom" del grup, altres grups) queda
- * intacta. Es localitza el grup pel seu identificador literal
- * (p. ex. "1ESOA":) i es reemplaça només el primer bloc
- * "alumnes: [...]" que hi apareix a continuació.
+ * "grupId": { nom: ..., alumnes: [ ... ] } pel de la llista nova
+ * (mantenint el mateix "nom" de grup que ja hi hagués). La resta
+ * del fitxer (comentaris, altres grups...) queda intacta.
  */
-function generarTextAlumnesActualitzat(grupId, alumnesNous) {
-  const text = textAlumnesOriginal;
+function generarTextAlumnesActualitzat(grupId, noms) {
   const idText = JSON.stringify(grupId);
+  const nomGrup = GRUPS[grupId]?.nom || grupId;
 
-  // Localitza on comença la definició d'aquest grup: "1ESOA": {
-  const patroIniciGrup = new RegExp(String.raw`${idText}\s*:\s*\{`);
-  const matchInici = patroIniciGrup.exec(text);
+  const patroBloc = new RegExp(
+    String.raw`${idText}\s*:\s*\{[\s\S]*?alumnes\s*:\s*\[[\s\S]*?\]\s*\}(?=\s*[,}])`
+  );
 
-  if (!matchInici) {
-    throw new Error(`No s'ha trobat el grup ${grupId} a alumnes.js`);
+  if (!patroBloc.test(textAlumnesOriginal)) {
+    console.error(`No s'ha trobat el bloc GRUPS[${idText}] a alumnes.js`);
+    return textAlumnesOriginal;
   }
 
-  // A partir d'aquí, localitza el bloc "alumnes: [ ... ]" complet,
-  // comptant claudàtors per trobar-ne el tancament correcte encara
-  // que els noms continguin caràcters especials.
-  const inici = matchInici.index;
-  const patroAlumnes = /alumnes\s*:\s*\[/;
-  const matchAlumnes = patroAlumnes.exec(text.slice(inici));
+  const nouBloc =
+    `${idText}: {\n` +
+    `    nom: ${JSON.stringify(nomGrup)},\n` +
+    `    alumnes: [\n${generarCosArrayAlumnes(grupId, noms)}\n    ]\n` +
+    `  }`;
 
-  if (!matchAlumnes) {
-    throw new Error(`No s'ha trobat la llista d'alumnes del grup ${grupId} a alumnes.js`);
-  }
-
-  const inicíClaudator = inici + matchAlumnes.index + matchAlumnes[0].length;
-  let profunditat = 1;
-  let posicio = inicíClaudator;
-
-  while (profunditat > 0 && posicio < text.length) {
-    const caracter = text[posicio];
-    if (caracter === "[") profunditat++;
-    if (caracter === "]") profunditat--;
-    posicio++;
-  }
-
-  if (profunditat !== 0) {
-    throw new Error(`No s'ha pogut tancar la llista d'alumnes del grup ${grupId} a alumnes.js`);
-  }
-
-  const abans = text.slice(0, inici + matchAlumnes.index);
-  const despres = text.slice(posicio);
-  const blocNou = generarBlocAlumnes(alumnesNous);
-
-  return `${abans}${blocNou}${despres}`;
+  return textAlumnesOriginal.replace(patroBloc, nouBloc);
 }
 
 async function descarregarAlumnesActualitzat() {
   if (!textAlumnesOriginal) {
-    await carregarTextAlumnesOriginal();
+    try {
+      await carregarTextAlumnesOriginal();
+    } catch (error) {
+      console.error("No s'ha pogut carregar alumnes.js:", error);
+      alert(
+        "No s'ha pogut llegir alumnes.js del servidor, així que no es pot " +
+        "generar la descàrrega. Comprova que la pàgina s'obre per http(s) " +
+        "(amb un servidor local), no fent doble clic sobre el fitxer."
+      );
+      return;
+    }
   }
 
-  const alumnesNous = generarIdsNous(grupAlta, nomsActuals);
+  const grupId = document.getElementById("selector-grup-alta").value;
+  const noms = parsejarNoms(document.getElementById("textarea-noms").value);
+  if (noms.length === 0) return;
 
-  let text;
-  try {
-    text = generarTextAlumnesActualitzat(grupAlta, alumnesNous);
-  } catch (error) {
-    console.error(error);
-    const avis = document.getElementById("avis-alta");
-    avis.textContent = "Hi ha hagut un error generant el fitxer. Revisa la consola.";
-    avis.classList.add("alta-avis--error");
-    return;
-  }
-
+  const text = generarTextAlumnesActualitzat(grupId, noms);
   const blob = new Blob([text], { type: "text/javascript;charset=utf-8" });
   const url = URL.createObjectURL(blob);
 
@@ -280,22 +225,6 @@ async function descarregarAlumnesActualitzat() {
   document.body.removeChild(enllaç);
 
   URL.revokeObjectURL(url);
-
-  mostrarAvisPostDescarrega();
-}
-
-/**
- * Recordatori important després de descarregar: com que els ids dels
- * alumnes d'aquest grup han canviat, els seients antics d'aquest
- * grup a seients.js ja no correspondran a ningú. Cal substituir
- * alumnes.js pel nou i tornar a fer setup.html per a aquest grup.
- */
-function mostrarAvisPostDescarrega() {
-  const avis = document.getElementById("avis-alta");
-  avis.textContent =
-    `Descarregat. Substitueix alumnes.js pel nou fitxer i, com que els ids de ` +
-    `${GRUPS[grupAlta].nom} han canviat, torna a fer setup.html per assignar-li seients.`;
-  avis.classList.remove("alta-avis--error");
 }
 
 /* ----------------------------------------------------------------
@@ -304,14 +233,16 @@ function mostrarAvisPostDescarrega() {
 
 async function iniciarAlta() {
   inicialitzarSelectorGrups();
-
-  const grupInicial = document.getElementById("selector-grup-alta").value;
-  carregarGrup(grupInicial);
+  actualitzarEstatGrupActual();
+  actualitzarPrevisualitzacio();
 
   // Els listeners es registren SEMPRE, encara que la càrrega del
-  // text original falli — així la pàgina és interactiva (escriure,
-  // veure la previsualització) independentment que el fetch vagi bé.
-  document.getElementById("text-alumnes").addEventListener("input", processarText);
+  // text original falli — així la pàgina segueix sent interactiva
+  // (escriure, veure la previsualització) independentment que el
+  // fetch d'alumnes.js vagi bé o no.
+  document
+    .getElementById("textarea-noms")
+    .addEventListener("input", actualitzarPrevisualitzacio);
 
   document
     .getElementById("boto-descarregar-alumnes")
@@ -321,11 +252,10 @@ async function iniciarAlta() {
     await carregarTextAlumnesOriginal();
   } catch (error) {
     console.error("No s'ha pogut carregar alumnes.js:", error);
-    const avis = document.getElementById("avis-alta");
-    avis.textContent =
+    const contenidor = document.getElementById("estat-grup-actual");
+    contenidor.textContent =
       "No s'ha pogut llegir alumnes.js del servidor. Comprova que el fitxer " +
       "és a la mateixa carpeta i que la pàgina s'obre per http(s), no com a fitxer local.";
-    avis.classList.add("alta-avis--error");
   }
 }
 
