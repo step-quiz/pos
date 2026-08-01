@@ -64,13 +64,20 @@ header h1 {
   letter-spacing: -0.2px;
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .selector-wrap label {
   font-size: 12px;
   color: var(--text-2);
   margin-right: 6px;
 }
 
-#selector-grup {
+#selector-grup,
+#selector-grup-setup {
   font: inherit;
   font-weight: 600;
   padding: 8px 12px;
@@ -78,6 +85,30 @@ header h1 {
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-1);
+}
+
+.boto-nav {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: var(--r-btn);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--blau);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+
+.boto-nav:hover {
+  background: var(--blau);
+  border-color: var(--blau);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.boto-nav:active {
+  transform: translateY(0);
 }
 
 #info-horari {

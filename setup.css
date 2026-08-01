@@ -6,20 +6,6 @@
    específic d'aquesta pàgina: els seients i el bloc de descàrrega.
    ------------------------------------------------------------------ */
 
-.setup-ajuda {
-  font-size: 13px;
-  color: var(--text-2);
-  max-width: 62ch;
-  margin-bottom: 20px;
-}
-
-.setup-ajuda code {
-  background: var(--bg-base);
-  border-radius: 4px;
-  padding: 1px 5px;
-  font-size: 12px;
-}
-
 /* ── Seients (taules buides o assignades) ── */
 
 .seient {
@@ -74,6 +60,7 @@
 /* ── Bloc de descàrrega ── */
 
 .targeta-descarrega {
+  flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
