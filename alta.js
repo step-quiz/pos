@@ -46,7 +46,34 @@ function inicialitzarSelectorGrups() {
     selector.appendChild(opcio);
   }
 
-  selector.addEventListener("change", actualitzarEstatGrupActual);
+  selector.addEventListener("change", canviarGrupSeleccionat);
+}
+
+/**
+ * Es crida en carregar la pàgina i cada vegada que es canvia de
+ * grup: actualitza l'avís d'estat i precarrega el textarea amb els
+ * noms actuals del grup, un per línia. Així el cas més habitual
+ * (afegir o treure un sol alumne a mig curs) només necessita editar
+ * una línia, en lloc de tornar a enganxar els 30 noms sencers.
+ */
+function canviarGrupSeleccionat() {
+  actualitzarEstatGrupActual();
+  precarregarTextareaAmbGrupActual();
+}
+
+/**
+ * Substitueix el contingut del textarea pels noms actuals del grup
+ * seleccionat (un per línia), en el mateix ordre en què ja estan a
+ * alumnes.js. Si el grup encara no té cap alumne, deixa el textarea
+ * buit.
+ */
+function precarregarTextareaAmbGrupActual() {
+  const grupId = document.getElementById("selector-grup-alta").value;
+  const grup = GRUPS[grupId];
+  const noms = grup ? grup.alumnes.map(a => a.nom) : [];
+
+  document.getElementById("textarea-noms").value = noms.join("\n");
+  actualitzarPrevisualitzacio();
 }
 
 /**
@@ -234,7 +261,7 @@ async function descarregarAlumnesActualitzat() {
 async function iniciarAlta() {
   inicialitzarSelectorGrups();
   actualitzarEstatGrupActual();
-  actualitzarPrevisualitzacio();
+  precarregarTextareaAmbGrupActual();
 
   // Els listeners es registren SEMPRE, encara que la càrrega del
   // text original falli — així la pàgina segueix sent interactiva
