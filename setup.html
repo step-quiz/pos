@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configura els seients — Positius</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="setup.css" />
+</head>
+<body>
+
+  <div class="contenidor">
+
+    <header>
+      <h1>🪑 Configura els seients</h1>
+      <div class="selector-wrap">
+        <label for="selector-grup-setup">Grup:</label>
+        <select id="selector-grup-setup"></select>
+      </div>
+    </header>
+
+    <p class="setup-ajuda">
+      Clica una taula per triar quin alumne hi seu. Un alumne ja assignat
+      desapareix del desplegable de la resta de taules. Quan tots els
+      alumnes tinguin seient, descarrega el <code>config.js</code>
+      actualitzat i substitueix-lo al teu projecte.
+    </p>
+
+    <section class="targeta-grup">
+      <div id="graella-setup" class="graella-aula graella-setup"></div>
+    </section>
+
+    <section class="targeta-descarrega">
+      <span id="comptador-pendents" class="comptador-pendents"></span>
+      <button id="boto-descarregar-config" type="button" disabled>
+        Descarrega config.js ⭳
+      </button>
+    </section>
+
+    <footer>
+      Aquesta pàgina no desa res automàticament: només et prepara el
+      fitxer per descarregar.
+    </footer>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script src="setup.js"></script>
+</body>
+</html>
