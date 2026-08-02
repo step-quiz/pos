@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Horari — Positius</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="horari.css" />
+</head>
+<body>
+
+  <div class="contenidor">
+
+    <header>
+      <h1>🗓️ Horari</h1>
+      <div class="header-controls">
+        <a href="alta.html" class="boto-nav">Alta</a>
+        <a href="setup.html" class="boto-nav">Setup</a>
+        <a href="index.html" class="boto-nav">Positius</a>
+      </div>
+    </header>
+
+    <span id="estat-horari-actual" class="estat-horari-actual"></span>
+
+    <section class="targeta-horari">
+      <div class="columna-entrada">
+        <h2>Enganxa la graella de l'Excel</h2>
+        <p class="horari-ajuda">
+          Selecciona i copia el rang de l'Excel (amb o sense les columnes
+          "hora"/"inici" i la fila de capçalera) i enganxa'l aquí tal qual.
+        </p>
+        <textarea
+          id="textarea-horari"
+          placeholder="hora&#9;inici&#9;dilluns&#9;dimarts&#9;dimecres&#9;dijous&#9;divendres&#10;1&#9;8:15&#9;1r ESO A&#9;&#9;4t ESO&#9;1r ESO B&#9;&#10;…"
+        ></textarea>
+      </div>
+
+      <div class="columna-previsualitzacio">
+        <h2>Previsualització</h2>
+        <span id="previsualitzacio-comptador" class="previsualitzacio-comptador"></span>
+        <div id="previsualitzacio-graella" class="previsualitzacio-graella"></div>
+        <ul id="previsualitzacio-avisos" class="previsualitzacio-avisos"></ul>
+      </div>
+    </section>
+
+    <section class="targeta-descarrega">
+      <span class="avis-substitucio">
+        Substitueix per complet l'horari actual (HORARI). Les franges
+        horàries (FRANGES_HORARIES) no es toquen.
+      </span>
+      <button id="boto-descarregar-horari" type="button" disabled>
+        Descarrega horari.js ⭳
+      </button>
+    </section>
+
+  </div>
+
+  <script src="alumnes.js"></script>
+  <script src="horari.js"></script>
+  <script src="horari-app.js"></script>
+</body>
+</html>

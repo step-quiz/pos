@@ -1,0 +1,187 @@
+/* ------------------------------------------------------------------
+   horari.css
+   Estils propis d'horari.html. Reutilitza les variables de style.css
+   i només hi afegeix el que és específic d'aquesta pàgina: el
+   formulari de dues columnes, la graella de previsualització i la
+   llista d'avisos de cel·les no reconegudes.
+   ------------------------------------------------------------------ */
+
+.estat-horari-actual {
+  display: block;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 10px;
+  flex: 0 0 auto;
+}
+
+/* ── Targeta principal: entrada + previsualització ── */
+
+.targeta-horari {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-card);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+
+.columna-entrada,
+.columna-previsualitzacio {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.targeta-horari h2 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--blau-fosc);
+  margin-bottom: 6px;
+  flex: 0 0 auto;
+}
+
+.horari-ajuda {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 8px;
+  flex: 0 0 auto;
+}
+
+#textarea-horari {
+  flex: 1 1 auto;
+  min-height: 0;
+  resize: none;
+  font: inherit;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--text-1);
+  line-height: 1.5;
+  white-space: pre;
+}
+
+#textarea-horari:focus {
+  outline: 2px solid var(--blau);
+  outline-offset: -1px;
+}
+
+.previsualitzacio-comptador {
+  display: block;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 8px;
+  flex: 0 0 auto;
+}
+
+/* ── Graella de previsualització ── */
+
+.previsualitzacio-graella {
+  flex: 0 0 auto;
+  overflow-x: auto;
+}
+
+.previsualitzacio-graella table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+
+.previsualitzacio-graella th,
+.previsualitzacio-graella td {
+  padding: 6px 4px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.previsualitzacio-graella th {
+  color: var(--text-2);
+  font-weight: 700;
+  font-size: 11px;
+  background: var(--bg-base);
+}
+
+.previsualitzacio-graella td.cella-ocupada {
+  background: var(--blau-suau);
+  color: var(--blau-fosc);
+  font-weight: 700;
+}
+
+/* ── Llista d'avisos ── */
+
+.previsualitzacio-avisos {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin-top: 10px;
+  padding: 0;
+}
+
+.previsualitzacio-avisos:empty {
+  margin-top: 0;
+}
+
+.previsualitzacio-avisos li {
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ambre);
+  background: #fdf6ea;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 138, 28, 0.25);
+}
+
+/* ── Bloc de descàrrega ── */
+
+.targeta-descarrega {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-card);
+  padding: 16px 18px;
+}
+
+.avis-substitucio {
+  font-size: 12px;
+  color: var(--ambre);
+  font-weight: 600;
+  max-width: 55ch;
+}
+
+#boto-descarregar-horari {
+  flex: 0 0 auto;
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 20px;
+  border-radius: var(--r-btn);
+  border: none;
+  background: var(--blau);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+#boto-descarregar-horari:hover:not(:disabled) {
+  background: var(--blau-fosc);
+  transform: translateY(-1px);
+}
+
+#boto-descarregar-horari:disabled {
+  background: var(--text-3);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
