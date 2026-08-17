@@ -17,6 +17,13 @@
           <label for="selector-grup">Grup:</label>
           <select id="selector-grup"></select>
         </div>
+        <div class="toggle-m2-wrap">
+          <label class="toggle-m2-label" for="toggle-m2">
+            <input type="checkbox" id="toggle-m2" />
+            <span>Mode teclat (M2)</span>
+          </label>
+          <span id="indicador-m2" class="indicador-m2" aria-live="polite"></span>
+        </div>
         <a href="alta.html" class="boto-nav">Alta</a>
         <a href="horari.html" class="boto-nav">Horari</a>
         <a href="setup.html" class="boto-nav">Setup</a>
@@ -28,7 +35,11 @@
     <section class="targeta-grup">
       <div class="targeta-grup-cap">
         <h2 id="titol-grup"></h2>
-        <span class="pista-clic">Clic: +1 positiu · Clic dret: -1 positiu (màx. 3/dia)</span>
+        <span class="pista-clic">
+          M1: Clic +1 positiu · Clic dret -1 positiu &nbsp;·&nbsp;
+          M2: tecleja el número de l'alumne (p. ex. "17") &nbsp;·&nbsp;
+          (màx. 3/tram)
+        </span>
       </div>
       <div id="graella-aula" class="graella-aula"></div>
     </section>

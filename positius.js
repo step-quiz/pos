@@ -3,22 +3,33 @@
  * ---------------------------------------------------------------
  * Tota la "feina" de l'aplicació: saber quina classe toca ara,
  * dibuixar la graella d'alumnes amb la disposició de l'aula, i
- * assignar positius (amb el límit per tram horari).
+ * assignar positius (amb el límit per tram horari), de dues maneres
+ * complementàries:
+ *   - M1 (per defecte): clic a la targeta de l'alumne a la graella.
+ *   - M2 (activable amb el toggle de la capçalera): teclejant el
+ *     "numero" de 2 xifres de l'alumne (p. ex. "17"), sense clicar
+ *     ni prémer Intro. M2 anul·la M1 mentre està activa: els clics
+ *     a la graella deixen de fer res. Vegeu la secció "Mode M2" més
+ *     avall per al detall del comportament.
  *
  * Els positius es guarden per "tram": un dia concret + una hora
  * concreta (p. ex. "2026-08-03" + "1a hora"). Així, si un mateix
  * grup té dues classes el mateix dia, cada hora té el seu propi
- * comptador i el seu propi límit — no se sumen entre elles.
+ * comptador i el seu propi límit — no se sumen entre elles. Això
+ * val igual per M1 i per M2: totes dues criden la mateixa
+ * afegirPositiu().
  *
  * Depèn de les dades definides a tres fitxers, que s'han de
  * carregar abans que aquest:
- *   - alumnes.js  (GRUPS: noms de classe i llista d'alumnes)
+ *   - alumnes.js  (GRUPS: noms de classe i llista d'alumnes, cada
+ *                  alumne amb el seu "numero" de 2 xifres per M2)
  *   - seients.js  (DISPOSICIO_AULA, SEIENTS: on seu cada alumne)
  *   - horari.js   (HORARI, MAX_POSITIUS_DIA)
  *
  * Persistència: els positius es desen al localStorage del navegador,
  * així que es mantenen encara que es recarregui la pàgina. No hi ha
- * cap servidor: tot viu al navegador del professor.
+ * cap servidor: tot viu al navegador del professor. El mode M1/M2,
+ * en canvi, NO es desa: cada recàrrega de la pàgina comença en M1.
  *
  * El full de càlcul en si NO es mostra en aquesta pàgina: es
  * descarrega dia a dia com a Excel des del bloc "Baixada" (vegeu
@@ -36,6 +47,21 @@ const CLAU_EMMAGATZEMATGE = "positius-app-v1";
  */
 const HORA_FORA_HORARI = "fora d'horari";
 
+/**
+ * Temps de bloqueig del mode M2 (teclat) després de formar-se un
+ * codi de 2 dígits, en mil·lisegons. Són dos casos ben diferents:
+ *   - ENCERT (l'alumne existeix): bloqueig curt, només perquè dos
+ *     clics/codis consecutius no es trepitgin.
+ *   - ERROR (cap alumne amb aquest número al grup actiu): bloqueig
+ *     llarg, perquè el professor s'adoni que el codi no ha funcionat
+ *     abans de poder-ne teclejar un altre.
+ */
+// En cas d'encert, aquest mateix temps és també el que el nom de
+// l'alumne queda visible a l'indicador abans de netejar-se: els dos
+// comparteixen un únic temporitzador (vegeu processarDigitM2).
+const M2_BLOQUEIG_ENCERT_MS = 400;
+const M2_BLOQUEIG_ERROR_MS = 2000;
+
 /* ----------------------------------------------------------------
  * Estat en memòria
  * ------------------------------------------------------------- */
@@ -46,6 +72,37 @@ let dades = carregarDades();
 
 // Grup que s'està mostrant ara mateix a la pantalla
 let grupActiu = null;
+
+// Mapa alumneId -> { targeta, refrescar } de la graella actualment
+// dibuixada, per poder-hi accedir des de fora de crearTargetaAlumne
+// (per exemple, des del mode M2, que no clica cap targeta però
+// necessita el mateix flaix visual que un clic normal). Es
+// reconstrueix sencer a cada renderitzarGraella().
+let targetesPerAlumneId = new Map();
+
+/* ----------------------------------------------------------------
+ * Mode d'entrada: M1 (clic a la graella) o M2 (teclat, dos dígits)
+ * ------------------------------------------------------------- */
+
+// "M1" (per defecte, clic a les targetes) o "M2" (teclat, sense
+// clicar). Mai es desa entre sessions: cada recàrrega comença en M1.
+let modeActual = "M1";
+
+// Dígits acumulats del codi que s'està escrivint en mode M2 (0, 1 o
+// 2 caràcters). Es buida en formar-se un codi complet (èxit o error)
+// i durant el període de bloqueig posterior.
+let buffM2 = "";
+
+// Mentre val true, el mode M2 ignora qualsevol tecla nova: és el
+// "cadenat" que implementa tant el cooldown curt (0.4s) d'un codi
+// encertat com la penalització llarga (2s) d'un codi que no
+// correspon a cap alumne.
+let bloquejatM2 = false;
+
+// Identificador del setTimeout actiu que desbloquejarà bloquejatM2,
+// per poder-lo cancel·lar si cal (per exemple si es desactiva M2 a
+// mig bloqueig). Sempre hi ha com a màxim un temporitzador actiu.
+let timeoutBloquejM2 = null;
 
 /* ----------------------------------------------------------------
  * Persistència (localStorage)
@@ -273,6 +330,16 @@ function trobarAlumne(grupId, alumneId) {
   return GRUPS[grupId].alumnes.find(a => a.id === alumneId);
 }
 
+/**
+ * Retorna l'objecte alumne a partir del seu "numero" (cadena de 2
+ * xifres, p. ex. "17"), cercant dins la llista d'alumnes del grup.
+ * Retorna undefined si cap alumne del grup té aquest número (mode
+ * M2: codi teclejat que no correspon a ningú).
+ */
+function trobarAlumnePerNumero(grupId, numero) {
+  return GRUPS[grupId].alumnes.find(a => a.numero === numero);
+}
+
 function crearTargetaAlumne(grupId, alumne) {
   const targeta = document.createElement("button");
   targeta.type = "button";
@@ -301,6 +368,11 @@ function crearTargetaAlumne(grupId, alumne) {
   }
 
   targeta.addEventListener("click", () => {
+    // En mode M2 els clics a la graella no fan res (M2 anul·la M1):
+    // les targetes ja es veuen "no clicables" (vegeu aplicarModeAGraella),
+    // però guardem també aquesta comprovació aquí per si de cas.
+    if (modeActual !== "M1") return;
+
     const afegit = afegirPositiu(grupId, alumne.id);
     refrescar();
     actualitzarDependentsDeDades(grupId);
@@ -314,12 +386,15 @@ function crearTargetaAlumne(grupId, alumne) {
   // Clic dret (o long-press amb el botó secundari) per desfer un positiu.
   targeta.addEventListener("contextmenu", (event) => {
     event.preventDefault();
+    if (modeActual !== "M1") return;
+
     treurePositiu(grupId, alumne.id);
     refrescar();
     actualitzarDependentsDeDades(grupId);
   });
 
   refrescar();
+  targetesPerAlumneId.set(alumne.id, { targeta, refrescar });
   return targeta;
 }
 
@@ -334,6 +409,10 @@ function renderitzarGraella(grupId) {
   const contenidor = document.getElementById("graella-aula");
   contenidor.innerHTML = "";
   contenidor.style.setProperty("--taules-per-fila", DISPOSICIO_AULA.parelles_per_fila);
+
+  // Cada renderitzat crea targetes noves: buidem el mapa d'abans
+  // perquè no quedin referències a targetes ja fora del DOM.
+  targetesPerAlumneId.clear();
 
   const filesAgrupades = agruparSeientsPerFilaITaula(grupId);
 
@@ -362,12 +441,208 @@ function renderitzarGraella(grupId) {
 
     contenidor.appendChild(filaEl);
   }
+
+  // Un renderitzat nou (canvi de grup, per exemple) crea targetes amb
+  // aspecte "normal" per defecte: cal reaplicar-hi l'aspecte del mode
+  // vigent, especialment si M2 ja estava activa.
+  aplicarModeAGraella();
 }
 
 function buitAlumne() {
   const buit = document.createElement("div");
   buit.className = "alumne alumne--buit";
   return buit;
+}
+
+/* ----------------------------------------------------------------
+ * Mode M2: assignar positius per teclat (dos dígits, sense clicar)
+ * ---------------------------------------------------------------
+ * Quan s'activa el mode M2 (toggle a la capçalera), M2 anul·la M1:
+ * els clics a la graella deixen de fer res (vegeu els guards a
+ * crearTargetaAlumne) i les targetes es veuen "no clicables".
+ *
+ * Escrivint dos dígits seguits (p. ex. "1" i després "7") s'aplica
+ * un positiu a l'alumne amb numero "17" del grup actiu, sense Intro
+ * ni cap clic — estil "teclat MS-DOS". Després de cada codi complet
+ * de 2 dígits, el teclat queda bloquejat una estona (curt si s'ha
+ * trobat l'alumne, llarg si no) abans de tornar a escoltar.
+ * ------------------------------------------------------------- */
+
+/**
+ * Activa o desactiva el mode M2. Es crida des del listener del
+ * checkbox/toggle de la capçalera (vegeu inicialitzarToggleM2).
+ */
+function establirMode(nouMode) {
+  modeActual = nouMode;
+
+  // Canviar de mode a mig codi o a mig bloqueig no ha de deixar
+  // l'aplicació en un estat estrany: sempre es comença de zero.
+  buffM2 = "";
+  bloquejatM2 = false;
+  if (timeoutBloquejM2 !== null) {
+    clearTimeout(timeoutBloquejM2);
+    timeoutBloquejM2 = null;
+  }
+
+  aplicarModeAGraella();
+  actualitzarIndicadorM2();
+}
+
+/**
+ * Reflecteix el mode actual a la graella: en M2, les targetes
+ * d'alumne es veuen (i són) no clicables. Es crida en canviar de
+ * mode i també just després de cada renderitzarGraella(), perquè un
+ * grup nou dibuixat mentre M2 ja estava activa hereti el mateix
+ * aspecte sense haver de tornar a clicar el toggle.
+ */
+function aplicarModeAGraella() {
+  const contenidor = document.getElementById("graella-aula");
+  if (!contenidor) return;
+  contenidor.classList.toggle("graella-aula--m2", modeActual === "M2");
+}
+
+/* ----------------------------------------------------------------
+ * Indicador d'estat de M2 (capçalera)
+ * ------------------------------------------------------------- */
+
+/**
+ * Estats possibles de l'indicador:
+ *   - M2 desactivada: indicador buit.
+ *   - Cap dígit encara: buit.
+ *   - Un dígit escrit: "1…".
+ *   - Codi complet, alumne trobat: el nom, un instant.
+ *   - Codi complet, alumne NO trobat: "35 no trobat", en vermell,
+ *     durant tot el bloqueig llarg.
+ */
+function actualitzarIndicadorM2(text, tipus) {
+  const indicador = document.getElementById("indicador-m2");
+  if (!indicador) return;
+
+  if (modeActual !== "M2") {
+    indicador.textContent = "";
+    indicador.classList.remove("indicador-m2--error", "indicador-m2--exit");
+    return;
+  }
+
+  indicador.textContent = text || "";
+  indicador.classList.toggle("indicador-m2--error", tipus === "error");
+  indicador.classList.toggle("indicador-m2--exit", tipus === "exit");
+}
+
+/* ----------------------------------------------------------------
+ * Entrada de teclat
+ * ------------------------------------------------------------- */
+
+/**
+ * Retorna true si l'element on és el focus ara mateix és un camp on
+ * l'usuari pugui estar escrivint normalment (select, input,
+ * textarea): en aquest cas, M2 no ha d'interceptar els dígits.
+ */
+function focusEnCampDEntrada() {
+  const actiu = document.activeElement;
+  if (!actiu) return false;
+  const tag = actiu.tagName;
+  return tag === "SELECT" || tag === "INPUT" || tag === "TEXTAREA";
+}
+
+/**
+ * Processa un dígit rebut en mode M2. Acumula fins a 2 dígits al
+ * buffer; en arribar al segon, resol el codi (busca l'alumne,
+ * aplica el positiu si existeix) i bloqueja l'entrada l'estona que
+ * correspongui segons si ha estat encert o error.
+ */
+function processarDigitM2(digit) {
+  buffM2 += digit;
+
+  if (buffM2.length === 1) {
+    actualitzarIndicadorM2(`${buffM2}…`);
+    return;
+  }
+
+  // buffM2.length === 2: codi complet, el resolem ara.
+  const codi = buffM2;
+  buffM2 = "";
+
+  const alumne = grupActiu ? trobarAlumnePerNumero(grupActiu, codi) : undefined;
+
+  if (alumne) {
+    afegirPositiuPerM2(grupActiu, alumne);
+    actualitzarIndicadorM2(alumne.nom, "exit");
+    bloquejarEntradaM2(M2_BLOQUEIG_ENCERT_MS, () => actualitzarIndicadorM2());
+  } else {
+    actualitzarIndicadorM2(`${codi} no trobat`, "error");
+    bloquejarEntradaM2(M2_BLOQUEIG_ERROR_MS, () => actualitzarIndicadorM2());
+  }
+}
+
+/**
+ * Bloqueja l'entrada de M2 durant `ms` mil·lisegons; en acabar,
+ * desbloqueja i executa `enAcabar` (típicament, netejar l'indicador).
+ * Substitueix qualsevol bloqueig anterior encara pendent (no hauria
+ * de passar-ne dos alhora, però per seguretat es cancel·la l'antic).
+ */
+function bloquejarEntradaM2(ms, enAcabar) {
+  bloquejatM2 = true;
+  if (timeoutBloquejM2 !== null) clearTimeout(timeoutBloquejM2);
+
+  timeoutBloquejM2 = setTimeout(() => {
+    bloquejatM2 = false;
+    timeoutBloquejM2 = null;
+    if (enAcabar) enAcabar();
+  }, ms);
+}
+
+/**
+ * Aplica un positiu des de M2: crida la mateixa afegirPositiu() que
+ * fa servir M1 (mateix límit de MAX_POSITIUS_DIA, mateix
+ * localStorage), i després refresca la targeta corresponent i el
+ * selector d'exportació, exactament com faria un clic normal.
+ */
+function afegirPositiuPerM2(grupId, alumne) {
+  afegirPositiu(grupId, alumne.id);
+
+  const entrada = targetesPerAlumneId.get(alumne.id);
+  if (entrada) {
+    entrada.refrescar();
+    entrada.targeta.classList.add("alumne--flaix-m2");
+    setTimeout(() => entrada.targeta.classList.remove("alumne--flaix-m2"), 300);
+  }
+  // Si l'alumne no té seient assignat (no apareix a la graella), no
+  // hi ha targeta que refrescar, però el positiu ja s'ha desat igual
+  // i sortirà correctament a l'exportació.
+
+  actualitzarDependentsDeDades(grupId);
+}
+
+/**
+ * Listener global de teclat per al mode M2. Només actua si: el mode
+ * actual és M2, no hi ha bloqueig actiu, el focus no és a
+ * select/input/textarea, i la tecla premuda és un dígit del 0 al 9.
+ */
+function gestionarTeclaM2(event) {
+  if (modeActual !== "M2") return;
+  if (bloquejatM2) return;
+  if (focusEnCampDEntrada()) return;
+  if (!/^[0-9]$/.test(event.key)) return;
+
+  processarDigitM2(event.key);
+}
+
+/**
+ * Inicialitza el toggle M1/M2 de la capçalera: en canviar el
+ * checkbox, commuta el mode. Comença sempre en M1 (el checkbox
+ * comença destriat), independentment de sessions anteriors.
+ */
+function inicialitzarToggleM2() {
+  const toggle = document.getElementById("toggle-m2");
+  if (!toggle) return;
+
+  toggle.checked = false;
+  toggle.addEventListener("change", () => {
+    establirMode(toggle.checked ? "M2" : "M1");
+  });
+
+  document.addEventListener("keydown", gestionarTeclaM2);
 }
 
 /* ----------------------------------------------------------------
@@ -410,6 +685,7 @@ function mostrarGrup(grupId) {
 function iniciarApp() {
   inicialitzarSelectorGrups();
   actualitzarInfoHorari();
+  inicialitzarToggleM2();
 
   const grupInicial = document.getElementById("selector-grup").value;
   mostrarGrup(grupInicial);

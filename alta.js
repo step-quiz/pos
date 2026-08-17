@@ -174,20 +174,27 @@ function generarSufixAlta() {
 /**
  * Retorna el codi (cos de l'array, sense claudàtors) amb un alumne
  * per línia, en el mateix estil que ja fem servir a alumnes.js:
- *   { id: "1ESOA-7042-01", nom: "Martina" },
+ *   { id: "1ESOA-7042-01", numero: "01", nom: "Martina" },
  *
  * Els identificadors es regeneren des de zero a cada alta, numerats
  * segons l'ordre en què s'han enganxat els noms i marcats amb el
  * sufix d'aquesta alta perquè no coincideixin amb els d'una alta
  * anterior (vegeu generarSufixAlta).
+ *
+ * "numero" (2 xifres, "01".."99") és sempre la posició de l'alumne
+ * en aquesta llista, tal com l'ha enganxat el professor — a
+ * diferència de l'id, NO porta el sufix de l'alta, perquè és el
+ * número que el professor ja es coneix de memòria del seu full de
+ * qualificacions i ha de mantenir-se estable i previsible. S'utilitza
+ * pel mode M2 (entrada per teclat) de positius.js.
  */
 function generarCosArrayAlumnes(grupId, noms) {
   const sufixAlta = generarSufixAlta();
 
   const linies = noms.map((nom, index) => {
-    const numero = String(index + 1).padStart(2, "0");
-    const id = `${grupId}-${sufixAlta}-${numero}`;
-    return `      { id: ${JSON.stringify(id)}, nom: ${JSON.stringify(nom)} }`;
+    const posicio = String(index + 1).padStart(2, "0");
+    const id = `${grupId}-${sufixAlta}-${posicio}`;
+    return `      { id: ${JSON.stringify(id)}, numero: ${JSON.stringify(posicio)}, nom: ${JSON.stringify(nom)} }`;
   });
 
   return linies.join(",\n");

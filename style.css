@@ -111,6 +111,51 @@ header h1 {
   transform: translateY(0);
 }
 
+/* ── Toggle M2 (mode teclat) i indicador d'estat ── */
+
+.toggle-m2-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-m2-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+  padding: 8px 12px;
+  border-radius: var(--r-btn);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-m2-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--blau);
+  cursor: pointer;
+}
+
+.indicador-m2 {
+  min-width: 74px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--blau);
+}
+
+.indicador-m2--exit {
+  color: var(--verd);
+}
+
+.indicador-m2--error {
+  color: var(--ambre);
+}
+
 #info-horari {
   display: block;
   font-size: 12px;
@@ -251,6 +296,29 @@ header h1 {
   background: transparent;
   box-shadow: none;
   cursor: default;
+}
+
+/* Flaix breu quan un positiu s'assigna des del mode M2 (teclat), com
+   a equivalent visual del clic normal de M1. */
+.alumne--flaix-m2 {
+  animation: flaix-m2 0.3s ease;
+}
+@keyframes flaix-m2 {
+  0% { box-shadow: var(--sh-card); }
+  40% { box-shadow: 0 0 0 3px var(--verd); }
+  100% { box-shadow: var(--sh-card); }
+}
+
+/* Mode M2 actiu: M2 anul·la M1, així que la graella es veu (i és) no
+   clicable — mateix "cursor: pointer" fora, però sense hover ni clic
+   efectius (els listeners ja ho ignoren en JS; això és només l'aspecte). */
+.graella-aula--m2 .alumne:not(.alumne--buit) {
+  cursor: default;
+  opacity: 0.72;
+}
+.graella-aula--m2 .alumne:not(.alumne--buit):hover {
+  transform: none;
+  box-shadow: var(--sh-card);
 }
 
 /* ── Exportar a Excel ── */
