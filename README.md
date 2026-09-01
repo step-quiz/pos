@@ -46,10 +46,11 @@ Un negatiu compta el doble que un positiu en sentit contrari (vegeu
 (`--`) donen `-4`.
 
 **M1 — clic a la taula (mode per defecte)**
-Cada taula de la graella mostra dos alumnes (un a cada costat).
-- Clic: suma un positiu. Clic dret: en resta un (per corregir un clic
-  per error).
-- **Ctrl+clic**: suma un negatiu. **Ctrl+clic dret**: en resta un.
+Cada taula de la graella mostra dos alumnes (un a cada costat). Cada botó
+del ratolí és sempre per a un tipus, i Ctrl amb el mateix botó sempre vol
+dir "desfés" (per corregir un clic per error):
+- **Botó esquerre**: suma un positiu. **Ctrl+clic esquerre**: en resta un.
+- **Botó dret**: suma un negatiu. **Ctrl+clic dret**: en resta un.
 
 **M2 — teclat, sense clicar ni prémer Intro**
 Pensat per quan el professor es coneix de memòria el número de cada

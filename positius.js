@@ -19,12 +19,12 @@
  * MAX_POSITIUS_DIA — no els comptadors de positius i negatius per
  * separat.
  *
- * Gestos de M1: clic suma un positiu, clic dret en resta un (per
- * corregir un clic per error); Ctrl+clic suma un negatiu, Ctrl+clic
- * dret en resta un. Gestos de M2: escriure el "numero" de l'alumne
- * assigna un positiu; prement "-" abans (amb el buffer buit) el
- * pròxim codi s'aplica com a negatiu en comptes de positiu (prémer
- * "-" un altre cop, encara sense cap dígit, ho desfà).
+ * Gestos de M1: el botó esquerre és sempre per als positius i el dret
+ * sempre per als negatius — clic suma, Ctrl+clic (amb el mateix botó)
+ * en resta un (per corregir un clic per error). Gestos de M2: escriure
+ * el "numero" de l'alumne assigna un positiu; prement "-" abans (amb
+ * el buffer buit) el pròxim codi s'aplica com a negatiu en comptes de
+ * positiu (prémer "-" un altre cop, encara sense cap dígit, ho desfà).
  *
  * Els positius i negatius es guarden per "tram": un dia concret + una
  * hora concreta (p. ex. "2026-08-03" + "1a hora"). Així, si un mateix
@@ -292,7 +292,7 @@ function afegirPositiu(grupId, alumneId) {
 
 /**
  * Treu un positiu del tram horari actiu a un alumne (per corregir un
- * clic per error). Retorna true si s'ha tret, false si ja era a 0.
+ * Ctrl+clic per error). Retorna true si s'ha tret, false si ja era a 0.
  */
 function treurePositiu(grupId, alumneId) {
   const tram = tramActiuPerGrup(grupId);
@@ -322,7 +322,7 @@ function afegirNegatiu(grupId, alumneId) {
 
 /**
  * Treu un negatiu del tram horari actiu a un alumne (per corregir un
- * Ctrl+clic per error). Retorna true si s'ha tret, false si ja era a 0.
+ * Ctrl+clic dret per error). Retorna true si s'ha tret, false si ja era a 0.
  */
 function treureNegatiu(grupId, alumneId) {
   const tram = tramActiuPerGrup(grupId);
@@ -477,39 +477,45 @@ function crearTargetaAlumne(grupId, alumne) {
     );
   }
 
+  // Botó esquerre = positius, botó dret = negatius: cada botó és
+  // sempre el mateix tipus. Ctrl amb el mateix botó vol dir "desfés"
+  // (corregeix un clic per error), independentment de quin botó sigui.
   targeta.addEventListener("click", (event) => {
     // En mode M2 els clics a la graella no fan res (M2 anul·la M1):
     // les targetes ja es veuen "no clicables" (vegeu aplicarModeAGraella),
     // però guardem també aquesta comprovació aquí per si de cas.
     if (modeActual !== "M1") return;
 
-    const esNegatiu = event.ctrlKey || event.metaKey;
-    const afegit = esNegatiu
-      ? afegirNegatiu(grupId, alumne.id)
+    const esDesfer = event.ctrlKey || event.metaKey;
+    const ok = esDesfer
+      ? treurePositiu(grupId, alumne.id)
       : afegirPositiu(grupId, alumne.id);
 
     refrescar();
     actualitzarDependentsDeDades(grupId);
 
-    if (!afegit) {
+    if (!ok) {
       targeta.classList.add("alumne--rebot");
       setTimeout(() => targeta.classList.remove("alumne--rebot"), 220);
     }
   });
 
-  // Clic dret per desfer un positiu (com fins ara); Ctrl+clic dret
-  // per desfer un negatiu.
   targeta.addEventListener("contextmenu", (event) => {
     event.preventDefault();
     if (modeActual !== "M1") return;
 
-    if (event.ctrlKey || event.metaKey) {
-      treureNegatiu(grupId, alumne.id);
-    } else {
-      treurePositiu(grupId, alumne.id);
-    }
+    const esDesfer = event.ctrlKey || event.metaKey;
+    const ok = esDesfer
+      ? treureNegatiu(grupId, alumne.id)
+      : afegirNegatiu(grupId, alumne.id);
+
     refrescar();
     actualitzarDependentsDeDades(grupId);
+
+    if (!ok) {
+      targeta.classList.add("alumne--rebot");
+      setTimeout(() => targeta.classList.remove("alumne--rebot"), 220);
+    }
   });
 
   refrescar();
@@ -728,7 +734,7 @@ function bloquejarEntradaM2(ms, enAcabar) {
  * crida la mateixa afegirPositiu()/afegirNegatiu() que fa servir M1
  * (mateix límit, mateix localStorage), i després refresca la targeta
  * corresponent i el selector d'exportació, exactament com faria el
- * clic o Ctrl+clic equivalent.
+ * clic esquerre o el clic dret equivalent.
  */
 function aplicarPositiuONegatiuPerM2(grupId, alumne, esNegatiu) {
   if (esNegatiu) {
