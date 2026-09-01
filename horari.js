@@ -14,16 +14,35 @@
  *     horari.html: hi enganxes la graella tal com la tens a l'Excel
  *     del centre i es descarrega aquest fitxer actualitzat.
  *
- * MAX_POSITIUS_DIA tampoc canvia gaire, així que es queda aquí
- * també, a mà.
+ * MAX_POSITIUS_DIA, VALOR_MINIM_TRAM i PES_NEGATIU tampoc canvien
+ * gaire, així que es queden aquí també, a mà.
  * ---------------------------------------------------------------
  */
 
 /**
- * Nombre màxim de positius que un alumne pot rebre en un mateix
- * tram (dia + franja concrets).
+ * Valor màxim (el més positiu) que pot arribar a tenir un alumne en
+ * un mateix tram (dia + franja concrets). El "valor" d'un alumne en
+ * un tram és positius - PES_NEGATIU × negatius (vegeu PES_NEGATIU):
+ * amb 0 negatius, aquest límit equival simplement al nombre màxim de
+ * positius d'un tram, que és l'ús original d'aquesta constant.
  */
 const MAX_POSITIUS_DIA = 3;
+
+/**
+ * Valor mínim (el més negatiu) que pot arribar a tenir un alumne en
+ * un mateix tram. Amb els valors per defecte, dos negatius sense cap
+ * positiu ("- -", és a dir -4) ja hi arriben: no se'n poden afegir
+ * més fins que algun positiu compensi el valor cap amunt.
+ */
+const VALOR_MINIM_TRAM = -4;
+
+/**
+ * Quants punts resta UN negatiu al valor combinat d'un tram. Amb el
+ * valor per defecte (2), cada negatiu val el doble d'un positiu en
+ * sentit contrari: "+++-" són 3 positius i 1 negatiu, és a dir
+ * 3 - (2×1) = +1.
+ */
+const PES_NEGATIU = 2;
 
 /**
  * Les 6 franges horàries de l'institut. "numero" és l'1..6 tal com

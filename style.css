@@ -10,6 +10,8 @@
   --verd:       #2f8a5d;
   --verd-suau:  #e6f4ec;
   --ambre:      #c98a1c;
+  --vermell: #b23a3a;
+  --vermell-suau: #f7e8e8;
 
   --text-1: #1c2114;
   --text-2: #545e5e;
@@ -152,6 +154,10 @@ header h1 {
   color: var(--verd);
 }
 
+.indicador-m2--exit-negatiu {
+  color: var(--vermell);
+}
+
 .indicador-m2--error {
   color: var(--ambre);
 }
@@ -267,20 +273,41 @@ header h1 {
   line-height: 1.15;
 }
 
+/* El comptador té dos grups de símbols, un per als positius i un
+   altre per als negatius, sempre agrupats per tipus (mai barrejats
+   per ordre d'entrada) i amb un color diferent cadascun perquè es
+   distingeixin d'un cop d'ull. Un grup buit simplement no ocupa
+   espai (el span queda buit), així que amb només positius (el cas
+   d'abans d'afegir els negatius) es veu exactament igual que abans. */
 .alumne-comptador {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
   font-size: 20px; /* +70% respecte als 12px originals */
   font-weight: 800;
-  color: var(--verd);
   letter-spacing: 1px;
   line-height: 1;
   min-height: 22px;
 }
 
+.alumne-comptador-positius {
+  color: var(--verd);
+}
+
+.alumne-comptador-negatius {
+  color: var(--vermell);
+}
+
 .alumne--maxim {
   background: var(--verd-suau);
 }
-.alumne--maxim .alumne-comptador {
-  color: var(--verd);
+
+/* Simètric a alumne--maxim, però per quan el valor combinat ja ha
+   arribat al mínim (VALOR_MINIM_TRAM): mateix tractament visual,
+   amb el to vermell en comptes del verd. */
+.alumne--minim {
+  background: var(--vermell-suau);
 }
 
 .alumne--rebot {

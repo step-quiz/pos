@@ -10,8 +10,13 @@
  * index.html. Tota la generació passa al navegador: no hi ha cap
  * servidor ni s'envien dades enlloc.
  *
+ * La columna "Positius" porta el valor NET del tram (positius menys
+ * els negatius, ja restats — vegeu valorDelTram a positius.js), que
+ * és el número final que cal enganxar al full de qualificacions, no
+ * el desglossament de positius i negatius per separat.
+ *
  * Depèn d'alumnes.js (GRUPS) i de positius.js (dades, tramsAmbDades,
- * crearTramId, descompondreTramId, positiusDelTram).
+ * crearTramId, descompondreTramId, valorDelTram).
  * ---------------------------------------------------------------
  */
 
@@ -66,14 +71,14 @@ function formatarTramLlarg(tramId) {
 
 /**
  * Construeix les files de la columna a exportar: una fila per
- * alumne, en el mateix ordre que a alumnes.js, amb el seu nombre de
- * positius en aquest tram concret.
+ * alumne, en el mateix ordre que a alumnes.js, amb el seu valor net
+ * (positius menys negatius) en aquest tram concret.
  */
 function construirFilesExportacio(grupId, tramId) {
   const grup = GRUPS[grupId];
   return grup.alumnes.map(alumne => ({
     Alumne: alumne.nom,
-    Positius: positiusDelTram(grupId, alumne.id, tramId)
+    Positius: valorDelTram(grupId, alumne.id, tramId)
   }));
 }
 

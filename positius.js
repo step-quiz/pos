@@ -3,33 +3,48 @@
  * ---------------------------------------------------------------
  * Tota la "feina" de l'aplicació: saber quina classe toca ara,
  * dibuixar la graella d'alumnes amb la disposició de l'aula, i
- * assignar positius (amb el límit per tram horari), de dues maneres
- * complementàries:
- *   - M1 (per defecte): clic a la targeta de l'alumne a la graella.
+ * assignar positius i negatius (amb el límit per tram horari), de
+ * dues maneres complementàries:
+ *   - M1 (per defecte): clic/Ctrl+clic a la targeta de l'alumne.
  *   - M2 (activable amb el toggle de la capçalera): teclejant el
  *     "numero" de 2 xifres de l'alumne (p. ex. "17"), sense clicar
  *     ni prémer Intro. M2 anul·la M1 mentre està activa: els clics
  *     a la graella deixen de fer res. Vegeu la secció "Mode M2" més
  *     avall per al detall del comportament.
  *
- * Els positius es guarden per "tram": un dia concret + una hora
- * concreta (p. ex. "2026-08-03" + "1a hora"). Així, si un mateix
+ * Un alumne pot rebre positius i negatius, i cada negatiu val
+ * PES_NEGATIU punts en contra (vegeu horari.js): el "valor" d'un
+ * alumne en un tram és sempre positius - PES_NEGATIU × negatius, i
+ * és aquest valor combinat el que es limita entre VALOR_MINIM_TRAM i
+ * MAX_POSITIUS_DIA — no els comptadors de positius i negatius per
+ * separat.
+ *
+ * Gestos de M1: clic suma un positiu, clic dret en resta un (per
+ * corregir un clic per error); Ctrl+clic suma un negatiu, Ctrl+clic
+ * dret en resta un. Gestos de M2: escriure el "numero" de l'alumne
+ * assigna un positiu; prement "-" abans (amb el buffer buit) el
+ * pròxim codi s'aplica com a negatiu en comptes de positiu (prémer
+ * "-" un altre cop, encara sense cap dígit, ho desfà).
+ *
+ * Els positius i negatius es guarden per "tram": un dia concret + una
+ * hora concreta (p. ex. "2026-08-03" + "1a hora"). Així, si un mateix
  * grup té dues classes el mateix dia, cada hora té el seu propi
- * comptador i el seu propi límit — no se sumen entre elles. Això
- * val igual per M1 i per M2: totes dues criden la mateixa
- * afegirPositiu().
+ * comptador i el seu propi límit — no se sumen entre elles. Això val
+ * igual per M1 i per M2: totes dues criden les mateixes
+ * afegirPositiu()/afegirNegatiu().
  *
  * Depèn de les dades definides a tres fitxers, que s'han de
  * carregar abans que aquest:
  *   - alumnes.js  (GRUPS: noms de classe i llista d'alumnes, cada
  *                  alumne amb el seu "numero" de 2 xifres per M2)
  *   - seients.js  (DISPOSICIO_AULA, SEIENTS: on seu cada alumne)
- *   - horari.js   (HORARI, MAX_POSITIUS_DIA)
+ *   - horari.js   (HORARI, MAX_POSITIUS_DIA, VALOR_MINIM_TRAM,
+ *                  PES_NEGATIU)
  *
- * Persistència: els positius es desen al localStorage del navegador,
- * així que es mantenen encara que es recarregui la pàgina. No hi ha
- * cap servidor: tot viu al navegador del professor. El mode M1/M2,
- * en canvi, NO es desa: cada recàrrega de la pàgina comença en M1.
+ * Persistència: els positius i negatius es desen al localStorage del
+ * navegador, així que es mantenen encara que es recarregui la
+ * pàgina. No hi ha cap servidor: tot viu al navegador del professor.
+ * El mode M1/M2, en canvi, NO es desa: cada recàrrega comença en M1.
  *
  * El full de càlcul en si NO es mostra en aquesta pàgina: es
  * descarrega dia a dia com a Excel des del bloc "Baixada" (vegeu
@@ -66,8 +81,13 @@ const M2_BLOQUEIG_ERROR_MS = 2000;
  * Estat en memòria
  * ------------------------------------------------------------- */
 
-// Estructura: dades[grupId][tramId][alumneId] = nombre de positius
+// Estructura: dades[grupId][tramId][alumneId] = { positius, negatius }
 // tramId té la forma "AAAA-MM-DD__<hora>", vegeu crearTramId().
+//
+// Abans d'afegir els negatius, aquest valor era directament un
+// número (el comptador de positius). registreDelTram() normalitza
+// aquest format antic en llegir-lo, així que localStorage desat amb
+// una versió anterior de l'app segueix funcionant sense migració.
 let dades = carregarDades();
 
 // Grup que s'està mostrant ara mateix a la pantalla
@@ -103,6 +123,14 @@ let bloquejatM2 = false;
 // per poder-lo cancel·lar si cal (per exemple si es desactiva M2 a
 // mig bloqueig). Sempre hi ha com a màxim un temporitzador actiu.
 let timeoutBloquejM2 = null;
+
+// Quan val true, el pròxim codi complet de 2 dígits s'aplicarà com a
+// negatiu en comptes de positiu. S'activa prement "-" amb el buffer
+// buit (buffM2 === ""); prement "-" una segona vegada, encara sense
+// cap dígit, ho desfà. Es reinicia a false en resoldre's un codi
+// (encert o error, vegeu processarDigitM2) i també en canviar de
+// mode (vegeu establirMode).
+let m2PendentNegatiu = false;
 
 /* ----------------------------------------------------------------
  * Persistència (localStorage)
@@ -198,31 +226,67 @@ function tramActiuPerGrup(grupId) {
 }
 
 /* ----------------------------------------------------------------
- * Accés als positius d'un alumne
+ * Accés als positius i negatius d'un alumne
  * ------------------------------------------------------------- */
 
+/**
+ * Retorna el registre brut { positius, negatius } d'un alumne en un
+ * tram concret. Normalitza el format antic (un únic número, d'abans
+ * d'afegir els negatius) a la forma nova sense tocar les dades
+ * desades — només en la lectura, així que localStorage vell no cal
+ * migrar-lo a mà.
+ */
+function registreDelTram(grupId, alumneId, tramId) {
+  const valor = dades?.[grupId]?.[tramId]?.[alumneId];
+  if (valor === undefined || valor === null) return { positius: 0, negatius: 0 };
+  if (typeof valor === "number") return { positius: valor, negatius: 0 }; // format antic
+  return { positius: valor.positius || 0, negatius: valor.negatius || 0 };
+}
+
 function positiusDelTram(grupId, alumneId, tramId) {
-  return dades?.[grupId]?.[tramId]?.[alumneId] || 0;
+  return registreDelTram(grupId, alumneId, tramId).positius;
+}
+
+function negatiusDelTram(grupId, alumneId, tramId) {
+  return registreDelTram(grupId, alumneId, tramId).negatius;
+}
+
+/**
+ * Valor combinat d'un alumne en un tram: positius - PES_NEGATIU ×
+ * negatius (vegeu horari.js). És el número que s'exporta a l'Excel.
+ */
+function valorDelTram(grupId, alumneId, tramId) {
+  const { positius, negatius } = registreDelTram(grupId, alumneId, tramId);
+  return positius - PES_NEGATIU * negatius;
+}
+
+/**
+ * Desa un nou registre { positius, negatius } per a un alumne en el
+ * tram indicat, creant les entrades intermèdies de `dades` si cal.
+ * Ús intern: afegirPositiu/treurePositiu/afegirNegatiu/treureNegatiu
+ * ja validen els límits abans de cridar-la.
+ */
+function escriureRegistreDelTram(grupId, tramId, alumneId, registre) {
+  if (!dades[grupId]) dades[grupId] = {};
+  if (!dades[grupId][tramId]) dades[grupId][tramId] = {};
+  dades[grupId][tramId][alumneId] = registre;
+  desarDades();
 }
 
 /**
  * Afegeix un positiu a un alumne en el tram horari actiu ara mateix,
- * respectant el límit MAX_POSITIUS_DIA (per tram, no per dia sencer).
- * Retorna true si s'ha afegit, false si ja s'havia arribat al màxim.
+ * sense deixar que el valor combinat superi MAX_POSITIUS_DIA (per
+ * tram, no per dia sencer). Retorna true si s'ha afegit, false si ja
+ * s'havia arribat al màxim.
  */
 function afegirPositiu(grupId, alumneId) {
   const tram = tramActiuPerGrup(grupId);
+  const { positius, negatius } = registreDelTram(grupId, alumneId, tram);
 
-  if (!dades[grupId]) dades[grupId] = {};
-  if (!dades[grupId][tram]) dades[grupId][tram] = {};
+  const nouValor = (positius + 1) - PES_NEGATIU * negatius;
+  if (nouValor > MAX_POSITIUS_DIA) return false;
 
-  const actual = dades[grupId][tram][alumneId] || 0;
-  if (actual >= MAX_POSITIUS_DIA) {
-    return false;
-  }
-
-  dades[grupId][tram][alumneId] = actual + 1;
-  desarDades();
+  escriureRegistreDelTram(grupId, tram, alumneId, { positius: positius + 1, negatius });
   return true;
 }
 
@@ -232,12 +296,41 @@ function afegirPositiu(grupId, alumneId) {
  */
 function treurePositiu(grupId, alumneId) {
   const tram = tramActiuPerGrup(grupId);
-  const actual = dades?.[grupId]?.[tram]?.[alumneId] || 0;
+  const { positius, negatius } = registreDelTram(grupId, alumneId, tram);
 
-  if (actual <= 0) return false;
+  if (positius <= 0) return false;
 
-  dades[grupId][tram][alumneId] = actual - 1;
-  desarDades();
+  escriureRegistreDelTram(grupId, tram, alumneId, { positius: positius - 1, negatius });
+  return true;
+}
+
+/**
+ * Afegeix un negatiu a un alumne en el tram horari actiu ara mateix,
+ * sense deixar que el valor combinat baixi de VALOR_MINIM_TRAM.
+ * Retorna true si s'ha afegit, false si ja s'havia arribat al mínim.
+ */
+function afegirNegatiu(grupId, alumneId) {
+  const tram = tramActiuPerGrup(grupId);
+  const { positius, negatius } = registreDelTram(grupId, alumneId, tram);
+
+  const nouValor = positius - PES_NEGATIU * (negatius + 1);
+  if (nouValor < VALOR_MINIM_TRAM) return false;
+
+  escriureRegistreDelTram(grupId, tram, alumneId, { positius, negatius: negatius + 1 });
+  return true;
+}
+
+/**
+ * Treu un negatiu del tram horari actiu a un alumne (per corregir un
+ * Ctrl+clic per error). Retorna true si s'ha tret, false si ja era a 0.
+ */
+function treureNegatiu(grupId, alumneId) {
+  const tram = tramActiuPerGrup(grupId);
+  const { positius, negatius } = registreDelTram(grupId, alumneId, tram);
+
+  if (negatius <= 0) return false;
+
+  escriureRegistreDelTram(grupId, tram, alumneId, { positius, negatius: negatius - 1 });
   return true;
 }
 
@@ -350,30 +443,51 @@ function crearTargetaAlumne(grupId, alumne) {
   nom.className = "alumne-nom";
   nom.textContent = alumne.nom;
 
+  // Dos grups de símbols dins del mateix comptador (mai barrejats
+  // per ordre d'entrada, només agrupats per tipus): els positius
+  // sempre en verd, els negatius sempre en un altre color, perquè es
+  // distingeixin d'un cop d'ull.
   const comptador = document.createElement("span");
   comptador.className = "alumne-comptador";
+  const comptadorPositius = document.createElement("span");
+  comptadorPositius.className = "alumne-comptador-positius";
+  const comptadorNegatius = document.createElement("span");
+  comptadorNegatius.className = "alumne-comptador-negatius";
+  comptador.appendChild(comptadorPositius);
+  comptador.appendChild(comptadorNegatius);
 
   targeta.appendChild(nom);
   targeta.appendChild(comptador);
 
   function refrescar() {
     const tram = tramActiuPerGrup(grupId);
-    const positius = positiusDelTram(grupId, alumne.id, tram);
-    comptador.textContent = "+".repeat(positius);
-    targeta.classList.toggle("alumne--maxim", positius >= MAX_POSITIUS_DIA);
+    const { positius, negatius } = registreDelTram(grupId, alumne.id, tram);
+    const valor = positius - PES_NEGATIU * negatius;
+
+    comptadorPositius.textContent = "+".repeat(positius);
+    comptadorNegatius.textContent = "-".repeat(negatius);
+
+    targeta.classList.toggle("alumne--maxim", valor >= MAX_POSITIUS_DIA);
+    targeta.classList.toggle("alumne--minim", valor <= VALOR_MINIM_TRAM);
+
     targeta.setAttribute(
       "aria-label",
-      `${alumne.nom}: ${positius} de ${MAX_POSITIUS_DIA} positius en aquesta hora`
+      `${alumne.nom}: ${positius} positius i ${negatius} negatius ` +
+      `(valor ${valor}) en aquesta hora`
     );
   }
 
-  targeta.addEventListener("click", () => {
+  targeta.addEventListener("click", (event) => {
     // En mode M2 els clics a la graella no fan res (M2 anul·la M1):
     // les targetes ja es veuen "no clicables" (vegeu aplicarModeAGraella),
     // però guardem també aquesta comprovació aquí per si de cas.
     if (modeActual !== "M1") return;
 
-    const afegit = afegirPositiu(grupId, alumne.id);
+    const esNegatiu = event.ctrlKey || event.metaKey;
+    const afegit = esNegatiu
+      ? afegirNegatiu(grupId, alumne.id)
+      : afegirPositiu(grupId, alumne.id);
+
     refrescar();
     actualitzarDependentsDeDades(grupId);
 
@@ -383,12 +497,17 @@ function crearTargetaAlumne(grupId, alumne) {
     }
   });
 
-  // Clic dret (o long-press amb el botó secundari) per desfer un positiu.
+  // Clic dret per desfer un positiu (com fins ara); Ctrl+clic dret
+  // per desfer un negatiu.
   targeta.addEventListener("contextmenu", (event) => {
     event.preventDefault();
     if (modeActual !== "M1") return;
 
-    treurePositiu(grupId, alumne.id);
+    if (event.ctrlKey || event.metaKey) {
+      treureNegatiu(grupId, alumne.id);
+    } else {
+      treurePositiu(grupId, alumne.id);
+    }
     refrescar();
     actualitzarDependentsDeDades(grupId);
   });
@@ -455,7 +574,7 @@ function buitAlumne() {
 }
 
 /* ----------------------------------------------------------------
- * Mode M2: assignar positius per teclat (dos dígits, sense clicar)
+ * Mode M2: assignar positius i negatius per teclat (sense clicar)
  * ---------------------------------------------------------------
  * Quan s'activa el mode M2 (toggle a la capçalera), M2 anul·la M1:
  * els clics a la graella deixen de fer res (vegeu els guards a
@@ -463,9 +582,13 @@ function buitAlumne() {
  *
  * Escrivint dos dígits seguits (p. ex. "1" i després "7") s'aplica
  * un positiu a l'alumne amb numero "17" del grup actiu, sense Intro
- * ni cap clic — estil "teclat MS-DOS". Després de cada codi complet
- * de 2 dígits, el teclat queda bloquejat una estona (curt si s'ha
- * trobat l'alumne, llarg si no) abans de tornar a escoltar.
+ * ni cap clic — estil "teclat MS-DOS". Prement "-" abans, amb el
+ * buffer encara buit, el pròxim codi de 2 dígits s'aplica com a
+ * negatiu en comptes de positiu (vegeu m2PendentNegatiu); prement
+ * "-" una segona vegada, encara sense cap dígit, ho desfà. Després
+ * de cada codi complet de 2 dígits, el teclat queda bloquejat una
+ * estona (curt si s'ha trobat l'alumne, llarg si no) abans de tornar
+ * a escoltar — igual per positius que per negatius.
  * ------------------------------------------------------------- */
 
 /**
@@ -479,6 +602,7 @@ function establirMode(nouMode) {
   // l'aplicació en un estat estrany: sempre es comença de zero.
   buffM2 = "";
   bloquejatM2 = false;
+  m2PendentNegatiu = false;
   if (timeoutBloquejM2 !== null) {
     clearTimeout(timeoutBloquejM2);
     timeoutBloquejM2 = null;
@@ -508,10 +632,12 @@ function aplicarModeAGraella() {
 /**
  * Estats possibles de l'indicador:
  *   - M2 desactivada: indicador buit.
- *   - Cap dígit encara: buit.
- *   - Un dígit escrit: "1…".
- *   - Codi complet, alumne trobat: el nom, un instant.
- *   - Codi complet, alumne NO trobat: "35 no trobat", en vermell,
+ *   - Cap dígit encara: buit ("-" si s'ha premut "-" per marcar
+ *     negatiu, vegeu m2PendentNegatiu).
+ *   - Un dígit escrit: "1…" (o "-1…" si és negatiu).
+ *   - Codi complet, alumne trobat: el nom, un instant (en verd si ha
+ *     estat un positiu, en un altre color si ha estat un negatiu).
+ *   - Codi complet, alumne NO trobat: "35 no trobat", en ambre,
  *     durant tot el bloqueig llarg.
  */
 function actualitzarIndicadorM2(text, tipus) {
@@ -520,13 +646,14 @@ function actualitzarIndicadorM2(text, tipus) {
 
   if (modeActual !== "M2") {
     indicador.textContent = "";
-    indicador.classList.remove("indicador-m2--error", "indicador-m2--exit");
+    indicador.classList.remove("indicador-m2--error", "indicador-m2--exit", "indicador-m2--exit-negatiu");
     return;
   }
 
   indicador.textContent = text || "";
   indicador.classList.toggle("indicador-m2--error", tipus === "error");
   indicador.classList.toggle("indicador-m2--exit", tipus === "exit");
+  indicador.classList.toggle("indicador-m2--exit-negatiu", tipus === "exit-negatiu");
 }
 
 /* ----------------------------------------------------------------
@@ -547,27 +674,31 @@ function focusEnCampDEntrada() {
 
 /**
  * Processa un dígit rebut en mode M2. Acumula fins a 2 dígits al
- * buffer; en arribar al segon, resol el codi (busca l'alumne,
- * aplica el positiu si existeix) i bloqueja l'entrada l'estona que
- * correspongui segons si ha estat encert o error.
+ * buffer; en arribar al segon, resol el codi (busca l'alumne, aplica
+ * el positiu o el negatiu segons m2PendentNegatiu) i bloqueja
+ * l'entrada l'estona que correspongui segons si ha estat encert o
+ * error.
  */
 function processarDigitM2(digit) {
   buffM2 += digit;
 
   if (buffM2.length === 1) {
-    actualitzarIndicadorM2(`${buffM2}…`);
+    const prefix = m2PendentNegatiu ? "-" : "";
+    actualitzarIndicadorM2(`${prefix}${buffM2}…`, m2PendentNegatiu ? "exit-negatiu" : undefined);
     return;
   }
 
   // buffM2.length === 2: codi complet, el resolem ara.
   const codi = buffM2;
+  const esNegatiu = m2PendentNegatiu;
   buffM2 = "";
+  m2PendentNegatiu = false;
 
   const alumne = grupActiu ? trobarAlumnePerNumero(grupActiu, codi) : undefined;
 
   if (alumne) {
-    afegirPositiuPerM2(grupActiu, alumne);
-    actualitzarIndicadorM2(alumne.nom, "exit");
+    aplicarPositiuONegatiuPerM2(grupActiu, alumne, esNegatiu);
+    actualitzarIndicadorM2(alumne.nom, esNegatiu ? "exit-negatiu" : "exit");
     bloquejarEntradaM2(M2_BLOQUEIG_ENCERT_MS, () => actualitzarIndicadorM2());
   } else {
     actualitzarIndicadorM2(`${codi} no trobat`, "error");
@@ -593,13 +724,18 @@ function bloquejarEntradaM2(ms, enAcabar) {
 }
 
 /**
- * Aplica un positiu des de M2: crida la mateixa afegirPositiu() que
- * fa servir M1 (mateix límit de MAX_POSITIUS_DIA, mateix
- * localStorage), i després refresca la targeta corresponent i el
- * selector d'exportació, exactament com faria un clic normal.
+ * Aplica un positiu o un negatiu des de M2 (segons `esNegatiu`):
+ * crida la mateixa afegirPositiu()/afegirNegatiu() que fa servir M1
+ * (mateix límit, mateix localStorage), i després refresca la targeta
+ * corresponent i el selector d'exportació, exactament com faria el
+ * clic o Ctrl+clic equivalent.
  */
-function afegirPositiuPerM2(grupId, alumne) {
-  afegirPositiu(grupId, alumne.id);
+function aplicarPositiuONegatiuPerM2(grupId, alumne, esNegatiu) {
+  if (esNegatiu) {
+    afegirNegatiu(grupId, alumne.id);
+  } else {
+    afegirPositiu(grupId, alumne.id);
+  }
 
   const entrada = targetesPerAlumneId.get(alumne.id);
   if (entrada) {
@@ -608,21 +744,35 @@ function afegirPositiuPerM2(grupId, alumne) {
     setTimeout(() => entrada.targeta.classList.remove("alumne--flaix-m2"), 300);
   }
   // Si l'alumne no té seient assignat (no apareix a la graella), no
-  // hi ha targeta que refrescar, però el positiu ja s'ha desat igual
-  // i sortirà correctament a l'exportació.
+  // hi ha targeta que refrescar, però el positiu/negatiu ja s'ha
+  // desat igual i sortirà correctament a l'exportació.
 
   actualitzarDependentsDeDades(grupId);
 }
 
 /**
- * Listener global de teclat per al mode M2. Només actua si: el mode
- * actual és M2, no hi ha bloqueig actiu, el focus no és a
- * select/input/textarea, i la tecla premuda és un dígit del 0 al 9.
+ * Listener global de teclat per al mode M2. Només actua si el mode
+ * actual és M2, no hi ha bloqueig actiu i el focus no és a
+ * select/input/textarea. Dues tecles reben tractament especial:
+ *   - "-": amb el buffer buit, marca/desmarca el pròxim codi com a
+ *     negatiu (vegeu m2PendentNegatiu); s'ignora si ja s'ha escrit
+ *     algun dígit del codi.
+ *   - dígits del 0 al 9: es passen a processarDigitM2.
+ * Qualsevol altra tecla s'ignora.
  */
 function gestionarTeclaM2(event) {
   if (modeActual !== "M2") return;
   if (bloquejatM2) return;
   if (focusEnCampDEntrada()) return;
+
+  if (event.key === "-") {
+    if (buffM2.length === 0) {
+      m2PendentNegatiu = !m2PendentNegatiu;
+      actualitzarIndicadorM2(m2PendentNegatiu ? "-" : "", m2PendentNegatiu ? "exit-negatiu" : undefined);
+    }
+    return;
+  }
+
   if (!/^[0-9]$/.test(event.key)) return;
 
   processarDigitM2(event.key);

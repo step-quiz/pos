@@ -1,9 +1,9 @@
 # pos
 
-Gestor per assignar positius a classe, pensat per fer-se servir des del mòbil
-o la tauleta mentre es fa classe: es clica (o es tecleja) sobre la disposició
-real de l'aula i, al final del dia, s'exporta a Excel per enganxar-ho al full
-de qualificacions.
+Gestor per assignar positius i negatius a classe, pensat per fer-se servir
+des d'un ordinador portàtil amb ratolí mentre es fa classe: es clica (o es
+tecleja) sobre la disposició real de l'aula i, al final del dia, s'exporta
+a Excel per enganxar-ho al full de qualificacions.
 
 No hi ha servidor ni base de dades: és una aplicació estàtica (HTML + JS +
 CSS, sense frameworks ni build), i tot el que es desa viu al `localStorage`
@@ -12,8 +12,8 @@ del navegador.
 ## Índex
 
 - [Pàgines de l'aplicació](#pàgines-de-laplicació)
-- [Assignar positius: M1 (clic) i M2 (teclat)](#assignar-positius-m1-clic-i-m2-teclat)
-- [El límit de 3 positius: per tram, no per dia](#el-límit-de-3-positius-per-tram-no-per-dia)
+- [Assignar positius i negatius: M1 (clic) i M2 (teclat)](#assignar-positius-i-negatius-m1-clic-i-m2-teclat)
+- [El límit per tram: entre -4 i +3, no per dia](#el-límit-per-tram-entre--4-i-3-no-per-dia)
 - [Exportar a Excel](#exportar-a-excel)
 - [Estructura de dades i el patró "regenera i descarrega"](#estructura-de-dades-i-el-patró-regenera-i-descarrega)
 - [Fitxers del projecte](#fitxers-del-projecte)
@@ -33,63 +33,96 @@ Totes quatre comparteixen la mateixa base de dades (`alumnes.js`,
 `seients.js`, `horari.js`) i es naveguen entre elles amb els enllaços de la
 capçalera.
 
-## Assignar positius: M1 (clic) i M2 (teclat)
+## Assignar positius i negatius: M1 (clic) i M2 (teclat)
 
-Hi ha dues maneres complementàries d'assignar un positiu a un alumne,
-seleccionables amb un interruptor a la capçalera de `index.html`. **Només
-una està activa alhora**: activar M2 desactiva M1, i viceversa. En carregar
-la pàgina, sempre es comença en M1.
+Hi ha dues maneres complementàries d'assignar un positiu o un negatiu a un
+alumne, seleccionables amb un interruptor a la capçalera de `index.html`.
+**Només una està activa alhora**: activar M2 desactiva M1, i viceversa. En
+carregar la pàgina, sempre es comença en M1.
+
+Un negatiu compta el doble que un positiu en sentit contrari (vegeu
+`PES_NEGATIU` a `horari.js`): per exemple, tres positius i un negatiu
+(`+++-`) donen un valor final de `3 - (2×1) = +1`; dos negatius sols
+(`--`) donen `-4`.
 
 **M1 — clic a la taula (mode per defecte)**
-Cada taula de la graella mostra dos alumnes (un a cada costat). Un clic
-suma un positiu; un clic dret en resta un (per corregir un clic per error).
+Cada taula de la graella mostra dos alumnes (un a cada costat).
+- Clic: suma un positiu. Clic dret: en resta un (per corregir un clic
+  per error).
+- **Ctrl+clic**: suma un negatiu. **Ctrl+clic dret**: en resta un.
 
 **M2 — teclat, sense clicar ni prémer Intro**
 Pensat per quan el professor es coneix de memòria el número de cada
 alumne (la seva posició al full de qualificacions: `01`, `02`... `30`).
 Amb M2 activa, escriure els dos dígits del número —per exemple `1` i
-`7`— assigna l'instant un positiu a l'alumne número 17 del grup que es
+`7`— assigna a l'instant un positiu a l'alumne número 17 del grup que es
 veu en pantalla, sense necessitat de prémer Intro ni clicar cap botó
 ("estil MS-DOS"). Per això els números de l'1 al 9 s'escriuen sempre amb
 zero davant (`01`, `02`...): el sistema necessita rebre sempre dos dígits
 per saber que el codi ja està complet.
 
+Per assignar un **negatiu** per teclat, es prem la tecla `-` abans
+d'escriure els dos dígits (per exemple `-`, `1`, `7`): el pròxim codi
+complet s'aplica com a negatiu en comptes de positiu. Prement `-` una
+segona vegada, encara sense cap dígit escrit, es desfà (torna a mode
+positiu). Un cop resolt un codi (trobat o no), sempre es torna a mode
+positiu per al següent.
+
 Un indicador petit, al costat de l'interruptor, mostra l'estat de M2 en
 tot moment:
-- buit → esperant el primer dígit
-- `1…` → el primer dígit s'ha rebut, esperant el segon
-- el nom de l'alumne, en verd, un instant → codi reconegut i positiu
-  assignat
-- `35 no trobat`, en vermell → cap alumne del grup té aquest número
+- buit → esperant el primer dígit (`-` → esperant el primer dígit d'un
+  negatiu)
+- `1…` → el primer dígit s'ha rebut, esperant el segon (`-1…` si és un
+  negatiu)
+- el nom de l'alumne, un instant → codi reconegut i positiu (en verd) o
+  negatiu (en un altre color) assignat
+- `35 no trobat`, en ambre → cap alumne del grup té aquest número
 
 Després d'un codi complet, el teclat de M2 queda momentàniament
 "pausat" abans de tornar a acceptar entrada: **0.4 segons** si el codi ha
 trobat un alumne, o **2 segons sencers** si no n'ha trobat cap (perquè
-l'error es noti abans de poder-ne teclejar un altre). Mentre el focus
-estigui dins d'un desplegable, una casella de text o un camp de cerca,
-M2 ignora el teclat per no interferir amb l'ús normal d'aquests controls.
+l'error es noti abans de poder-ne teclejar un altre) — igual per
+positius que per negatius. Mentre el focus estigui dins d'un
+desplegable, una casella de text o un camp de cerca, M2 ignora el
+teclat per no interferir amb l'ús normal d'aquests controls.
 
-Els positius assignats per M2 compten exactament igual que els de M1:
-mateix límit, mateix desat, mateixa exportació — l'exportació no distingeix
-per quin dels dos mètodes s'ha arribat a cada positiu.
+A cada targeta es veuen sempre dos grups de símbols per separat —els
+positius en verd, els negatius en un altre color—, mai barrejats per
+ordre d'entrada, només agrupats per tipus (per exemple, `+++` i, a
+part, `- -`).
 
-## El límit de 3 positius: per tram, no per dia
+Els positius i negatius assignats per M2 compten exactament igual que
+els de M1: mateix límit, mateix desat, mateixa exportació — l'exportació
+no distingeix per quin dels dos mètodes s'ha arribat a cada valor.
 
-`MAX_POSITIUS_DIA` (a `horari.js`) val 3 per defecte, però el nom és una
-mica enganyós: el límit s'aplica **per tram horari** (dia + hora concrets),
-no per dia sencer. Si un mateix grup té classe amb el mateix professor dues
-vegades en un dia, cada hora té el seu propi comptador independent de 0 a
-3 — no se sumen entre elles.
+## El límit per tram: entre -4 i +3, no per dia
+
+`MAX_POSITIUS_DIA` i `VALOR_MINIM_TRAM` (a `horari.js`) valen `3` i `-4`
+per defecte, però els noms són una mica enganyosos: el límit s'aplica
+**per tram horari** (dia + hora concrets), no per dia sencer. Si un mateix
+grup té classe amb el mateix professor dues vegades en un dia, cada hora
+té el seu propi comptador independent — no se sumen entre elles.
+
+El que es limita és el **valor combinat** d'un alumne en aquell tram
+(positius menys el doble dels negatius, vegeu la secció anterior), no els
+comptadors de positius i negatius per separat: es pot arribar a tenir més
+de 3 positius o més de 4 negatius en un mateix tram, sempre que el valor
+final es mantingui entre -4 i +3. Per exemple, amb el valor ja al mínim
+(-4), calen **dos** positius de marge —no n'hi ha prou amb un— abans que
+es pugui afegir un negatiu més sense sortir del rang.
 
 ## Exportar a Excel
 
 El bloc "Baixada" d'`index.html` no genera un `.csv`, sinó un fitxer
 **`.xlsx` d'Excel real** (via la llibreria [SheetJS], carregada des d'un
-CDN a `index.html`), amb dues columnes: `Alumne` i `Positius`. S'exporta
-**un tram a la vegada**: es tria dia + hora en un desplegable i es baixa
-aquest full — no hi ha un botó d'"exporta-ho tot" de cop. El nom del
-fitxer descarregat inclou el grup i el tram, per no confondre'l amb el
-d'una altra hora.
+CDN a `index.html`), amb dues columnes: `Alumne` i `Positius`. Aquesta
+segona columna porta el **valor net** de l'alumne en aquell tram
+(positius menys el doble dels negatius) — el número final a punt
+d'enganxar al full de qualificacions, no el desglossament de positius i
+negatius per separat. S'exporta **un tram a la vegada**: es tria dia +
+hora en un desplegable i es baixa aquest full — no hi ha un botó
+d'"exporta-ho tot" de cop. El nom del fitxer descarregat inclou el grup i
+el tram, per no confondre'l amb el d'una altra hora.
 
 [SheetJS]: https://sheetjs.com/
 
@@ -134,8 +167,8 @@ apareix com a "sense seient assignat", sense donar error).
 |---|---|
 | `alumnes.js` | Dades: grups i llistat d'alumnes (`id`, `numero`, `nom`). Es regenera des d'`alta.html`. |
 | `seients.js` | Dades: disposició de l'aula i quin alumne seu on. Es regenera des de `setup.html`. |
-| `horari.js` | Dades: horari del centre i `MAX_POSITIUS_DIA`. Es regenera des de `horari.html`. |
-| `positius.js` | Lògica principal: graella, positius (M1 i M2), trams horaris. |
+| `horari.js` | Dades: horari del centre, `MAX_POSITIUS_DIA`, `VALOR_MINIM_TRAM` i `PES_NEGATIU`. Es regenera des de `horari.html` (només la part de l'horari; els tres límits es toquen a mà). |
+| `positius.js` | Lògica principal: graella, positius i negatius (M1 i M2), trams horaris. |
 | `alta.js` | Lògica de `alta.html`. |
 | `setup.js` | Lògica de `setup.html`. |
 | `horari-app.js` | Lògica de `horari.html` (enganxar l'horari des de l'Excel del centre, amb detecció de capçalera i coincidència aproximada de noms de grup). |
