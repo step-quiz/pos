@@ -5,7 +5,7 @@
  * concreta de l'aula (fila, taula, costat) i, al final, descarregar
  * un seients.js nou amb aquestes posicions ja escrites.
  *
- * Depèn de les dades definides a alumnes.js (GRUPS) i seients.js
+ * Depèn de les dades definides a dades.js (GRUPS) i seients.js
  * (DISPOSICIO_AULA, SEIENTS), que s'han de carregar abans que
  * aquest fitxer.
  *

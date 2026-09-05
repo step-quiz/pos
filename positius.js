@@ -35,7 +35,7 @@
  *
  * Depèn de les dades definides a tres fitxers, que s'han de
  * carregar abans que aquest:
- *   - alumnes.js  (GRUPS: noms de classe i llista d'alumnes, cada
+ *   - dades.js    (GRUPS: noms de classe i llista d'alumnes, cada
  *                  alumne amb el seu "numero" de 2 xifres per M2)
  *   - seients.js  (DISPOSICIO_AULA, SEIENTS: on seu cada alumne)
  *   - horari.js   (HORARI, MAX_POSITIUS_DIA, VALOR_MINIM_TRAM,
@@ -417,7 +417,7 @@ function agruparSeientsPerFilaITaula(grupId) {
 
 /**
  * Retorna l'objecte alumne { id, nom } a partir del seu id, cercant
- * dins la llista d'alumnes del grup (alumnes.js).
+ * dins la llista d'alumnes del grup.
  */
 function trobarAlumne(grupId, alumneId) {
   return GRUPS[grupId].alumnes.find(a => a.id === alumneId);

@@ -5,7 +5,7 @@
  * surt de l'Excel oficial del centre, i descarregar un horari.js
  * nou amb el bloc HORARI actualitzat.
  *
- * Depèn de les dades definides a alumnes.js (GRUPS) i horari.js
+ * Depèn de les dades definides a dades.js (GRUPS) i horari.js
  * (FRANGES_HORARIES, textFranjaHoraria), que s'han de carregar
  * abans que aquest fitxer.
  *
@@ -35,7 +35,7 @@ const DIES_SETMANA = [
 
 // Text font original d'horari.js, carregat amb fetch, usat com a
 // plantilla per generar el fitxer final (mateix patró que alta.js
-// amb alumnes.js i setup.js amb seients.js).
+// amb el fitxer del docent i setup.js amb seients.js).
 let textHorariOriginal = null;
 
 /* ----------------------------------------------------------------

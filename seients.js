@@ -1,7 +1,7 @@
 /**
  * seients.js
  * ---------------------------------------------------------------
- * On seu cada alumne a l'aula. Separat d'alumnes.js perquè aquest
+ * On seu cada alumne a l'aula. Separat del fitxer del docent perquè aquest
  * fitxer el regenera setup.html (quan decideixes qui seu on) i no
  * s'hauria de tocar quan dones d'alta un grup nou amb alta.html.
  *
@@ -13,8 +13,8 @@
  * Amb els valors per defecte: 5 files x 3 taules x 2 alumnes = 30
  * seients com a màxim per grup.
  *
- * SEIENTS té una entrada per grup (mateixos identificadors que a
- * alumnes.js) amb la llista de seients ocupats. Cada seient és
+ * SEIENTS té una entrada per grup (mateixos identificadors que al
+ * fitxer del docent) amb la llista de seients ocupats. Cada seient és
  * { alumneId, fila, taula, costat }:
  *   - fila:   1..DISPOSICIO_AULA.files (de davant a darrere)
  *   - taula:  1..DISPOSICIO_AULA.parelles_per_fila (d'esquerra a dreta)

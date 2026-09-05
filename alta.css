@@ -145,3 +145,73 @@
   cursor: not-allowed;
   opacity: 0.7;
 }
+
+/* ------------------------------------------------------------------
+   Dades del docent (nom i curs)
+   Només serveixen per identificar el fitxer generat, per això la
+   targeta és discreta i va damunt de la feina de debò.
+   ------------------------------------------------------------------ */
+
+.targeta-docent {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-card);
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.camp-docent-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.camp-docent-wrap label {
+  font-size: 0.74rem;
+  color: var(--text-3);
+}
+
+.camp-docent-wrap input {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text-1);
+  padding: 6px 10px;
+  width: 11ch;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-base);
+}
+
+.camp-docent-wrap input:focus-visible {
+  outline: 2px solid var(--blau);
+  outline-offset: 1px;
+}
+
+.camp-docent-nota {
+  font-size: 0.78rem;
+  color: var(--text-3);
+  margin-left: auto;
+  padding-bottom: 7px;
+}
+
+.camp-docent-nota code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: var(--text-2);
+  background: var(--blau-suau);
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+
+.estat-alta {
+  font-size: 0.84rem;
+  color: var(--verd);
+  background: var(--verd-suau);
+  border-radius: 10px;
+  padding: 9px 13px;
+  margin-top: 10px;
+}

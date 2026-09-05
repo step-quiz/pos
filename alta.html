@@ -26,6 +26,20 @@
 
     <span id="estat-grup-actual" class="estat-grup-actual"></span>
 
+    <section class="targeta-docent">
+      <div class="camp-docent-wrap">
+        <label for="camp-docent">Docent</label>
+        <input id="camp-docent" type="text" placeholder="Dani" autocomplete="off" />
+      </div>
+      <div class="camp-docent-wrap">
+        <label for="camp-curs">Curs</label>
+        <input id="camp-curs" type="text" placeholder="2026-27" autocomplete="off" />
+      </div>
+      <span class="camp-docent-nota">
+        El fitxer es dirà <code id="nom-fitxer">profe.js</code>
+      </span>
+    </section>
+
     <section class="targeta-alta">
       <div class="columna-entrada">
         <h2>Enganxa la llista de noms</h2>
@@ -50,14 +64,21 @@
       <span class="avis-substitucio">
         Substitueix per complet la llista actual del grup. Després caldrà refer el Setup.
       </span>
-      <button id="boto-descarregar-alumnes" type="button" disabled>
-        Descarrega alumnes.js ⭳
-      </button>
+      <div class="targeta-descarrega-botons">
+        <button id="boto-desa-nomes" type="button" class="boto-secundari" disabled>
+          Desa només aquí
+        </button>
+        <button id="boto-desa-descarrega" type="button" disabled>
+          Desa i descarrega ⭳
+        </button>
+      </div>
     </section>
+
+    <p id="estat-alta" class="estat-alta" hidden></p>
 
   </div>
 
-  <script src="alumnes.js"></script>
+  <script src="dades.js"></script>
   <script src="alta.js"></script>
 </body>
 </html>

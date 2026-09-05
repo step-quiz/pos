@@ -75,7 +75,7 @@ function textFranjaHoraria(numeroFranja) {
  * Només cal omplir els trams en què el professor fa classe.
  *
  * Aquest bloc el regenera horari.html — no cal editar-lo a mà. El
- * "grup" ha de coincidir amb un identificador de GRUPS a alumnes.js.
+ * "grup" ha de coincidir amb un identificador de GRUPS.
  */
 const HORARI = {
   1: [ // Dilluns

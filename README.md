@@ -29,7 +29,7 @@ del navegador.
 | `setup.html` | Assignar quin alumne seu a quina taula/costat. |
 | `horari.html` | Enganxar l'horari oficial del centre (copiat des d'un Excel) perquè l'app sàpiga quin grup toca a cada hora. |
 
-Totes quatre comparteixen la mateixa base de dades (`alumnes.js`,
+Totes quatre comparteixen la mateixa base de dades (el fitxer del docent,
 `seients.js`, `horari.js`) i es naveguen entre elles amb els enllaços de la
 capçalera.
 
@@ -131,7 +131,7 @@ el tram, per no confondre'l amb el d'una altra hora.
 
 Com que no hi ha backend, `alta.html` i `setup.html` no "guarden" els
 canvis enlloc: en comptes d'això, **regeneren el fitxer de dades sencer
-(`alumnes.js` o `seients.js`) com a text i el descarreguen**, i és el
+(el fitxer del docent o `seients.js`) i el descarreguen**, i és el
 professor qui l'ha de desar manualment sobre el fitxer del mateix nom
 dins la carpeta del projecte, substituint-lo. És per això que cal tornar
 a obrir el projecte des d'un servidor local després de fer canvis (vegeu

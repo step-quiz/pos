@@ -15,7 +15,7 @@
  * és el número final que cal enganxar al full de qualificacions, no
  * el desglossament de positius i negatius per separat.
  *
- * Depèn d'alumnes.js (GRUPS) i de positius.js (dades, tramsAmbDades,
+ * Depèn d'dades.js (GRUPS) i de positius.js (dades, tramsAmbDades,
  * crearTramId, descompondreTramId, valorDelTram).
  * ---------------------------------------------------------------
  */
@@ -71,7 +71,7 @@ function formatarTramLlarg(tramId) {
 
 /**
  * Construeix les files de la columna a exportar: una fila per
- * alumne, en el mateix ordre que a alumnes.js, amb el seu valor net
+ * alumne, en el mateix ordre que al fitxer del docent, amb el seu valor net
  * (positius menys negatius) en aquest tram concret.
  */
 function construirFilesExportacio(grupId, tramId) {
