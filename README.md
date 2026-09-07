@@ -201,3 +201,12 @@ i obrir `http://localhost:8000/index.html` al navegador.
 - Reassignar un grup a `alta.html` **desfà les assignacions de seients**
   d'aquell grup (vegeu més amunt).
 - `config.js` és mort i no s'ha d'editar esperant que faci res.
+
+<!-- atribucio-centre:inici -->
+
+---
+
+Material desenvolupat per **David Arso Civil** per al Departament de Matemàtiques de l'INS Miquel Tarradell.
+Contingut sota CC BY-NC-SA 4.0, codi sota llicència MIT. Vegeu [`LLICENCIA.md`](LLICENCIA.md).
+
+<!-- atribucio-centre:final -->
