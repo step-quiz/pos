@@ -13,6 +13,7 @@ del navegador.
 
 - [Pàgines de l'aplicació](#pàgines-de-laplicació)
 - [Assignar positius i negatius: M1 (clic) i M2 (teclat)](#assignar-positius-i-negatius-m1-clic-i-m2-teclat)
+- [Assignar seients: clic o arrossegar](#assignar-seients-clic-o-arrossegar)
 - [El límit per tram: entre -4 i +3, no per dia](#el-límit-per-tram-entre--4-i-3-no-per-dia)
 - [Exportar a Excel](#exportar-a-excel)
 - [Estructura de dades i el patró "regenera i descarrega"](#estructura-de-dades-i-el-patró-regenera-i-descarrega)
@@ -95,6 +96,39 @@ part, `- -`).
 Els positius i negatius assignats per M2 compten exactament igual que
 els de M1: mateix límit, mateix desat, mateixa exportació — l'exportació
 no distingeix per quin dels dos mètodes s'ha arribat a cada valor.
+
+## Assignar seients: clic o arrossegar
+
+A `setup.html` hi ha dues maneres de decidir qui seu on. **No cal
+triar-ne cap**: totes dues estan sempre actives i es poden barrejar
+lliurement dins la mateixa sessió, perquè escriuen sobre les mateixes
+assignacions.
+
+**Clic a la taula**
+Es clica un seient i s'obre un desplegable amb els alumnes que encara no
+seuen enlloc (i, a dalt de tot, `— Seient buit —` per alliberar-lo).
+Còmode per a canvis puntuals i quan se sap exactament quin nom es busca.
+
+**Arrossegar i deixar anar (ratolí)**
+Sota la graella hi ha la **banqueta**: una fila de fitxes amb els
+alumnes que encara no tenen seient. Des d'allà:
+
+- **Banqueta → taula**: arrossegar un nom fins a una taula l'hi asseu.
+  Si la taula ja estava ocupada, qui hi seia torna a la banqueta.
+- **Taula → banqueta**: arrossegar un alumne assignat fins a la banqueta
+  li allibera el lloc i el deixa pendent altra vegada.
+- **Taula → taula**: si la taula de destí és buida, l'alumne s'hi mou;
+  si està ocupada, **els dos alumnes s'intercanvien el lloc** (útil per
+  separar o ajuntar parelles sense haver de buidar res primer).
+
+Mentre es porta un alumne pel damunt, les taules lliures es marquen en
+blau i la banqueta en ambre, per veure d'un cop d'ull on es pot deixar
+anar. Si es deixa anar fora de qualsevol diana (per exemple, al marge),
+no passa res i tot queda com estava.
+
+Està pensat per a **ratolí**: fa servir l'arrossegament natiu del
+navegador i no s'ha preparat per a pantalles tàctils. En una tauleta o
+un mòbil, cal fer servir el clic i el desplegable.
 
 ## El límit per tram: entre -4 i +3, no per dia
 

@@ -5,6 +5,12 @@
  * concreta de l'aula (fila, taula, costat) i, al final, descarregar
  * un seients.js nou amb aquestes posicions ja escrites.
  *
+ * Hi ha dues maneres d'assignar, sempre totes dues actives alhora:
+ *   1. Clic sobre un seient → desplegable amb els alumnes disponibles.
+ *   2. Arrossegar i deixar anar (drag-and-drop amb ratolí) entre la
+ *      banqueta d'alumnes sense seient i les taules de l'aula.
+ * Totes dues escriuen al mateix objecte `assignacions`.
+ *
  * Depèn de les dades definides a dades.js (GRUPS) i seients.js
  * (DISPOSICIO_AULA, SEIENTS), que s'han de carregar abans que
  * aquest fitxer.
@@ -26,6 +32,12 @@ let grupSetup = null;
 // Assignacions en curs: seientId -> alumneId
 // seientId té la forma "fila-taula-costat", p. ex. "1-2-esquerra"
 let assignacions = {};
+
+// Arrossegament en curs, o null si no s'està arrossegant res:
+//   { alumneId, origen }
+// on `origen` és el seientId d'on surt l'alumne, o null si surt de la
+// banqueta (alumnes encara sense seient).
+let arrossegant = null;
 
 // Text font original de seients.js, carregat amb fetch. El fem
 // servir com a plantilla per generar el fitxer final: només hi
@@ -100,8 +112,7 @@ function carregarGrup(grupId) {
     assignacions[seientId] = seient.alumneId;
   }
 
-  renderitzarGraella();
-  actualitzarComptador();
+  renderitzarTot();
 }
 
 /* ----------------------------------------------------------------
@@ -141,6 +152,35 @@ function crearSeientEl(fila, taula, costat) {
 
   seientEl.addEventListener("click", () => obrirSelectorSeient(seientEl, seientId));
 
+  // Un seient ocupat es pot agafar i portar a una altra taula o a la
+  // banqueta; un seient buit només pot rebre.
+  seientEl.addEventListener("dragstart", (event) => {
+    const alumneId = assignacions[seientId];
+    if (!alumneId) {
+      event.preventDefault();
+      return;
+    }
+    iniciarArrossegament(event, alumneId, seientId);
+  });
+
+  seientEl.addEventListener("dragend", finalitzarArrossegament);
+
+  seientEl.addEventListener("dragover", (event) => {
+    if (!arrossegant) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    seientEl.classList.add("seient--diana");
+  });
+
+  seientEl.addEventListener("dragleave", () => {
+    seientEl.classList.remove("seient--diana");
+  });
+
+  seientEl.addEventListener("drop", (event) => {
+    event.preventDefault();
+    deixarAnarASeient(seientId);
+  });
+
   refrescarSeientEl(seientEl, seientId);
   return seientEl;
 }
@@ -153,10 +193,176 @@ function refrescarSeientEl(seientEl, seientId) {
 
   seientEl.classList.toggle("seient--buit", !alumne);
   seientEl.textContent = alumne ? alumne.nom : "+ assigna";
+  seientEl.draggable = Boolean(alumne);
   seientEl.setAttribute(
     "aria-label",
-    alumne ? `${alumne.nom}. Clica per canviar.` : "Seient buit. Clica per assignar un alumne."
+    alumne
+      ? `${alumne.nom}. Clica per canviar, o arrossega'l a una altra taula.`
+      : "Seient buit. Clica per assignar un alumne, o arrossega-hi un nom."
   );
+}
+
+/* ----------------------------------------------------------------
+ * Banqueta: alumnes del grup que encara no seuen enlloc
+ * ------------------------------------------------------------- */
+
+/**
+ * Dibuixa, sota la graella, una fitxa per cada alumne sense seient.
+ * Cada fitxa es pot arrossegar fins a una taula; i la banqueta
+ * sencera accepta que hi deixis anar un alumne que ara seu en algun
+ * lloc, cosa que li allibera la taula.
+ */
+function renderitzarBanqueta() {
+  const llista = document.getElementById("llista-banqueta");
+  llista.innerHTML = "";
+
+  const pendents = alumnesSenseAssignar(grupSetup);
+
+  if (pendents.length === 0) {
+    const buida = document.createElement("span");
+    buida.className = "banqueta-buida";
+    buida.textContent = "Ningú: tots els alumnes seuen en alguna taula.";
+    llista.appendChild(buida);
+    return;
+  }
+
+  for (const alumne of pendents) {
+    llista.appendChild(crearFitxaAlumne(alumne));
+  }
+}
+
+function crearFitxaAlumne(alumne) {
+  const fitxa = document.createElement("div");
+  fitxa.className = "fitxa-alumne";
+  fitxa.textContent = alumne.nom;
+  fitxa.draggable = true;
+  fitxa.dataset.alumneId = alumne.id;
+  fitxa.setAttribute("aria-label", `${alumne.nom}, sense seient. Arrossega'l fins a una taula.`);
+
+  fitxa.addEventListener("dragstart", (event) => {
+    iniciarArrossegament(event, alumne.id, null);
+  });
+
+  fitxa.addEventListener("dragend", finalitzarArrossegament);
+
+  return fitxa;
+}
+
+/* ----------------------------------------------------------------
+ * Arrossegar i deixar anar
+ * ------------------------------------------------------------- */
+
+/**
+ * Comença un arrossegament. `origen` és el seient d'on surt l'alumne,
+ * o null si ve de la banqueta.
+ */
+function iniciarArrossegament(event, alumneId, origen) {
+  tancarSelectorObert();
+
+  arrossegant = { alumneId, origen };
+
+  // Encara que la informació que fem servir de debò és `arrossegant`,
+  // cal posar alguna cosa al dataTransfer perquè Firefox consideri
+  // l'arrossegament vàlid.
+  event.dataTransfer.setData("text/plain", alumneId);
+  event.dataTransfer.effectAllowed = "move";
+
+  event.currentTarget.classList.add("arrossegant");
+  document.body.classList.add("arrossegament-actiu");
+}
+
+/**
+ * Neteja les marques visuals de l'arrossegament. Es crida tant en
+ * acabar bé (drop) com si es deixa anar en un lloc que no accepta
+ * res (dragend).
+ */
+function finalitzarArrossegament() {
+  arrossegant = null;
+  document.body.classList.remove("arrossegament-actiu");
+  document.getElementById("banqueta").classList.remove("banqueta--diana");
+
+  for (const el of document.querySelectorAll(".arrossegant, .seient--diana")) {
+    el.classList.remove("arrossegant", "seient--diana");
+  }
+}
+
+/**
+ * Deixa anar l'alumne que s'està arrossegant sobre un seient.
+ *
+ * - Si el seient de destí és buit, l'alumne hi va i prou.
+ * - Si el destí ja està ocupat i l'alumne ve de la banqueta, qui hi
+ *   seia torna a la banqueta.
+ * - Si el destí ja està ocupat i l'alumne ve d'un altre seient, els
+ *   dos alumnes s'intercanvien el lloc.
+ */
+function deixarAnarASeient(seientDesti) {
+  if (!arrossegant) return;
+
+  const { alumneId, origen } = arrossegant;
+  finalitzarArrossegament();
+
+  if (origen === seientDesti) return;
+
+  const ocupantDesti = assignacions[seientDesti] || null;
+
+  if (origen) {
+    delete assignacions[origen];
+    if (ocupantDesti) assignacions[origen] = ocupantDesti;
+  }
+
+  assignacions[seientDesti] = alumneId;
+
+  renderitzarTot();
+}
+
+/**
+ * Deixa anar l'alumne sobre la banqueta: si venia d'un seient, el
+ * seient queda lliure i l'alumne passa a la llista de pendents. Si ja
+ * venia de la banqueta, no hi ha res a fer.
+ */
+function deixarAnarABanqueta() {
+  if (!arrossegant) return;
+
+  const { origen } = arrossegant;
+  finalitzarArrossegament();
+
+  if (!origen) return;
+
+  delete assignacions[origen];
+  renderitzarTot();
+}
+
+function inicialitzarBanquetaComADiana() {
+  const banqueta = document.getElementById("banqueta");
+
+  banqueta.addEventListener("dragover", (event) => {
+    // Només té sentit deixar-hi anar algú que ara seu en una taula.
+    if (!arrossegant || !arrossegant.origen) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    banqueta.classList.add("banqueta--diana");
+  });
+
+  banqueta.addEventListener("dragleave", (event) => {
+    // `dragleave` també salta en passar per sobre de les fitxes de
+    // dins; només comptem la sortida real del bloc.
+    if (banqueta.contains(event.relatedTarget)) return;
+    banqueta.classList.remove("banqueta--diana");
+  });
+
+  banqueta.addEventListener("drop", (event) => {
+    event.preventDefault();
+    deixarAnarABanqueta();
+  });
+}
+
+/**
+ * Redibuixa tot el que depèn de `assignacions`.
+ */
+function renderitzarTot() {
+  renderitzarGraella();
+  renderitzarBanqueta();
+  actualitzarComptador();
 }
 
 /* ----------------------------------------------------------------
@@ -244,8 +450,7 @@ function assignarSeient(seientId, alumneId) {
     delete assignacions[seientId];
   }
 
-  renderitzarGraella();
-  actualitzarComptador();
+  renderitzarTot();
 }
 
 /* ----------------------------------------------------------------
@@ -261,9 +466,10 @@ function actualitzarComptador() {
     contenidor.textContent = "Tots els alumnes tenen seient assignat.";
     contenidor.classList.add("comptador--complet");
   } else {
-    contenidor.textContent =
-      `Falten ${pendents.length} alumnes per assignar: ` +
-      pendents.map(a => a.nom).join(", ");
+    // Els noms concrets ja es veuen a la banqueta, aquí només el compte.
+    contenidor.textContent = pendents.length === 1
+      ? "Falta 1 alumne per assignar."
+      : `Falten ${pendents.length} alumnes per assignar.`;
     contenidor.classList.remove("comptador--complet");
   }
 
@@ -373,8 +579,7 @@ function esborrarTotesLesAssignacions() {
   if (!confirmat) return;
 
   assignacions = {};
-  renderitzarGraella();
-  actualitzarComptador();
+  renderitzarTot();
 }
 
 /* ----------------------------------------------------------------
@@ -383,6 +588,7 @@ function esborrarTotesLesAssignacions() {
 
 async function iniciarSetup() {
   inicialitzarSelectorGrups();
+  inicialitzarBanquetaComADiana();
 
   const grupInicial = document.getElementById("selector-grup-setup").value;
   carregarGrup(grupInicial);

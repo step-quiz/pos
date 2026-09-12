@@ -57,6 +57,116 @@
   color: var(--text-1);
 }
 
+/* ── Arrossegar i deixar anar ── */
+
+/* Un seient ocupat es pot agafar; un de buit, no. */
+.seient:not(.seient--buit) {
+  cursor: grab;
+}
+
+.seient:not(.seient--buit):active {
+  cursor: grabbing;
+}
+
+/* L'element que s'està arrossegant ara mateix (el que es queda al
+   seu lloc original, atenuat, mentre el ratolí porta la còpia). */
+.arrossegant {
+  opacity: 0.4;
+}
+
+/* Mentre dura l'arrossegament, els llocs lliures es fan visibles
+   perquè es vegi d'un cop d'ull on es pot deixar anar l'alumne. */
+.arrossegament-actiu .seient--buit {
+  border-style: solid;
+  border-color: var(--blau);
+  background: var(--blau-suau);
+  color: var(--blau);
+}
+
+/* Seient sobre el qual hi ha el punter ara mateix. */
+.seient--diana {
+  outline: 2px solid var(--blau);
+  outline-offset: 1px;
+  background: var(--blau-suau);
+  transform: translateY(-2px);
+}
+
+/* ── Banqueta: alumnes sense seient ── */
+
+.targeta-banqueta {
+  flex: 0 0 auto;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-card);
+  padding: 10px 14px 12px;
+  border: 2px dashed transparent;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+/* La banqueta accepta que hi deixis anar un alumne assignat, cosa
+   que li allibera la taula. */
+.targeta-banqueta.banqueta--diana {
+  border-color: var(--ambre);
+  background: #fdf6e8;
+}
+
+.banqueta-cap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-bottom: 8px;
+}
+
+.banqueta-titol {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--blau-fosc);
+}
+
+.banqueta-pista {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.banqueta-llista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 96px;
+  overflow-y: auto;
+}
+
+.fitxa-alumne {
+  padding: 6px 12px;
+  border-radius: var(--r-btn);
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  box-shadow: var(--sh-card);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-1);
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.fitxa-alumne:hover {
+  background: var(--blau-suau);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(20, 30, 40, 0.12);
+}
+
+.fitxa-alumne:active {
+  cursor: grabbing;
+}
+
+.banqueta-buida {
+  font-size: 13px;
+  color: var(--verd);
+  font-weight: 600;
+}
+
 /* ── Bloc de descàrrega ── */
 
 .targeta-descarrega {
