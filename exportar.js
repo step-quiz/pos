@@ -51,6 +51,12 @@ function actualitzarSelectorExportacio(grupId) {
     selector.appendChild(opcio);
   }
 
+  // Si el tram que s'està veient a la graella té dades, el deixem
+  // preseleccionat: així, després de repassar un dia passat, el botó
+  // de baixada ja apunta a aquell mateix dia i no al més recent.
+  const tramVisible = tramActiuPerGrup(grupId);
+  if (trams.includes(tramVisible)) selector.value = tramVisible;
+
   selector.disabled = false;
   boto.disabled = false;
 }

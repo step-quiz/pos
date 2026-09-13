@@ -210,6 +210,92 @@ header h1 {
   color: var(--text-3);
 }
 
+/* ── Selector de dia i franja (consultar trams passats) ── */
+
+.selector-tram {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.selector-tram label {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+#selector-data,
+#selector-hora {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--r-btn);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-1);
+}
+
+#selector-data {
+  cursor: pointer;
+}
+
+.boto-avui {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: var(--r-btn);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--blau);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.boto-avui:hover {
+  background: var(--blau);
+  border-color: var(--blau);
+  color: #fff;
+}
+
+/* Avís de tram passat: ha de ser impossible de no veure, perquè el
+   risc real és apuntar positius al dia equivocat sense adonar-se'n. */
+
+.avis-tram {
+  flex: 0 0 auto;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ambre);
+  background: #fdf6e8;
+  color: #7a5310;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.avis-tram[hidden] {
+  display: none;
+}
+
+/* Mentre es mira un dia passat, la targeta de la graella canvia de
+   to per reforçar l'avís. */
+
+.mode-tram-passat .targeta-grup {
+  border: 2px solid var(--ambre);
+}
+
+.mode-tram-passat .boto-avui {
+  background: var(--ambre);
+  border-color: var(--ambre);
+  color: #fff;
+}
+
+.mode-tram-passat #selector-data,
+.mode-tram-passat #selector-hora {
+  border-color: var(--ambre);
+}
+
 /* ── Graella de l'aula ── */
 
 .graella-aula {

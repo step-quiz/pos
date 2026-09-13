@@ -35,12 +35,19 @@
     <section class="targeta-grup">
       <div class="targeta-grup-cap">
         <h2 id="titol-grup"></h2>
+        <div class="selector-tram">
+          <label for="selector-data">Dia:</label>
+          <input type="date" id="selector-data" />
+          <select id="selector-hora" aria-label="Franja horària del dia"></select>
+          <button id="boto-avui" type="button" class="boto-avui">Avui</button>
+        </div>
         <span class="pista-clic">
           M1: Clic +1 positiu · Ctrl+clic -1 positiu · Clic dret +1 negatiu · Ctrl+clic dret -1 negatiu &nbsp;·&nbsp;
           M2: número per positiu, "-" + número per negatiu &nbsp;·&nbsp;
           (valor entre -4 i +3 per tram)
         </span>
       </div>
+      <p id="avis-tram" class="avis-tram" role="status" hidden></p>
       <div id="graella-aula" class="graella-aula"></div>
     </section>
 

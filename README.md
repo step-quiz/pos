@@ -15,6 +15,7 @@ del navegador.
 - [Assignar positius i negatius: M1 (clic) i M2 (teclat)](#assignar-positius-i-negatius-m1-clic-i-m2-teclat)
 - [Assignar seients: clic o arrossegar](#assignar-seients-clic-o-arrossegar)
 - [El límit per tram: entre -4 i +3, no per dia](#el-límit-per-tram-entre--4-i-3-no-per-dia)
+- [Consultar i corregir dies passats](#consultar-i-corregir-dies-passats)
 - [Exportar a Excel](#exportar-a-excel)
 - [Estructura de dades i el patró "regenera i descarrega"](#estructura-de-dades-i-el-patró-regenera-i-descarrega)
 - [Fitxers del projecte](#fitxers-del-projecte)
@@ -145,6 +146,37 @@ de 3 positius o més de 4 negatius en un mateix tram, sempre que el valor
 final es mantingui entre -4 i +3. Per exemple, amb el valor ja al mínim
 (-4), calen **dos** positius de marge —no n'hi ha prou amb un— abans que
 es pugui afegir un negatiu més sense sortir del rang.
+
+## Consultar i corregir dies passats
+
+A la capçalera de la graella hi ha un selector de **dia** i de **franja
+horària**. Per defecte marquen avui i la primera classe que l'horari
+digui d'aquest grup, i llavors tot funciona com sempre. Movent-lo cap
+enrere, la graella passa a mostrar els positius d'aquell tram, i **els
+clics i les tecles hi escriuen a sobre**: serveix tant per repassar què
+vas posar el dia 10 com per corregir un positiu que vas apuntar per
+error.
+
+Mentre no s'estigui mirant el dia d'avui, la targeta de la graella es
+marca en ambre i hi surt un avís explícit a dalt, perquè el risc real
+d'aquesta funció és apuntar positius al dia equivocat sense adonar-se'n.
+El botó **Avui** torna al tram d'ara en un clic. Cap endavant no s'hi pot
+anar: el camp de data té el topall a avui.
+
+El desplegable de franges mostra, per al dia triat:
+
+- les hores que l'horari diu que hi havia classe d'aquest grup,
+- qualsevol hora que ja tingui dades desades encara que l'horari actual
+  no la prevegi (per exemple, perquè l'horari ha canviat des de llavors),
+- i sempre `fora d'horari`, que és on van a parar els positius posats un
+  dia sense classe.
+
+Les franges que ja tenen alguna cosa escrita es marquen amb un ✓. Això
+també resol el cas d'un grup amb **dues classes el mateix dia**: per
+defecte s'escriu a la primera, però es pot triar la segona a mà.
+
+El selector de baixada s'hi sincronitza: si estàs mirant el dia 10, el
+botó d'Excel ja apunta a aquell tram.
 
 ## Exportar a Excel
 

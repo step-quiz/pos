@@ -33,6 +33,13 @@
  * igual per M1 i per M2: totes dues criden les mateixes
  * afegirPositiu()/afegirNegatiu().
  *
+ * El tram que es veu i s'edita el decideix el selector de dia i franja
+ * de la capçalera de la graella. Per defecte és el d'avui (i la
+ * primera classe que l'horari digui d'aquest grup), però es pot moure
+ * a qualsevol dia passat per repassar-lo o corregir-lo; mentre no
+ * s'estigui a avui, la pàgina ho avisa de manera ben visible. Cap a
+ * endavant no s'hi pot anar.
+ *
  * Depèn de les dades definides a tres fitxers, que s'han de
  * carregar abans que aquest:
  *   - dades.js    (GRUPS: noms de classe i llista d'alumnes, cada
@@ -92,6 +99,17 @@ let dades = carregarDades();
 
 // Grup que s'està mostrant ara mateix a la pantalla
 let grupActiu = null;
+
+// Tram que s'està consultant i editant ara mateix. Per defecte és el
+// d'avui, però amb el selector de dia i hora de la capçalera es pot
+// moure a qualsevol tram passat per repassar-lo o corregir-lo.
+//
+//   dataActiva: "AAAA-MM-DD"
+//   horaActiva: text de la franja ("1a hora (8:15)") o HORA_FORA_HORARI.
+//               Si val null, es calcula sol a partir de l'horari del dia
+//               (vegeu horaPerDefecte).
+let dataActiva = dataAvuiISO();
+let horaActiva = null;
 
 // Mapa alumneId -> { targeta, refrescar } de la graella actualment
 // dibuixada, per poder-hi accedir des de fora de crearTargetaAlumne
@@ -172,24 +190,48 @@ function dataAvuiISO() {
 }
 
 /**
+ * Converteix una data "AAAA-MM-DD" en un objecte Date local (a
+ * migdia, per evitar sorpreses amb canvis d'hora). Fem servir sempre
+ * aquesta funció en comptes de `new Date("AAAA-MM-DD")`, que
+ * s'interpreta com a UTC i pot desplaçar el dia.
+ */
+function dataDesDeISO(dataISO) {
+  const [y, m, d] = dataISO.split("-").map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0);
+}
+
+/**
+ * Retorna la llista de trams de classe d'un dia concret, segons
+ * HORARI. Cada tram és { hora, grup }.
+ */
+function tramsHorarisDelDia(dataISO) {
+  const diaSetmana = dataDesDeISO(dataISO).getDay(); // 0=diumenge ... 6=dissabte
+  return HORARI[diaSetmana] || [];
+}
+
+/**
  * Retorna la llista de trams de classe d'avui, segons HORARI.
- * Cada tram és { hora, grup }.
  */
 function tramsHoraris_avui() {
-  const diaSetmana = new Date().getDay(); // 0=diumenge ... 6=dissabte
-  return HORARI[diaSetmana] || [];
+  return tramsHorarisDelDia(dataAvuiISO());
+}
+
+/**
+ * Retorna un text llegible d'una data, p. ex. "dilluns 3 d'agost".
+ */
+function textDataLlegible(dataISO) {
+  return dataDesDeISO(dataISO).toLocaleDateString("ca-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long"
+  });
 }
 
 /**
  * Retorna un text llegible del dia d'avui, p. ex. "dilluns 3 d'agost".
  */
 function textDataAvui() {
-  const ara = new Date();
-  return ara.toLocaleDateString("ca-ES", {
-    weekday: "long",
-    day: "numeric",
-    month: "long"
-  });
+  return textDataLlegible(dataAvuiISO());
 }
 
 /**
@@ -212,17 +254,87 @@ function descompondreTramId(tramId) {
 }
 
 /**
- * Retorna el tram horari "actiu" ara mateix per a un grup concret:
- * si avui l'horari té una classe d'aquest grup que ja ha començat i
- * encara no s'ha acabat el dia... en un prototip senzill, ens fixem
- * només en si avui hi ha alguna classe d'aquest grup, i fem servir
- * la primera que trobem. Si no n'hi ha cap, els positius es desen
- * sota HORA_FORA_HORARI, per no barrejar-los amb cap hora real.
+ * Franges d'un dia en què aquest grup té classe segons HORARI, en
+ * l'ordre en què apareixen a l'horari.
+ */
+function horesSegonsHorari(grupId, dataISO) {
+  return tramsHorarisDelDia(dataISO)
+    .filter(t => t.grup === grupId)
+    .map(t => t.hora);
+}
+
+/**
+ * Franges d'un dia en què aquest grup ja té algun registre desat.
+ * Serveix per no amagar mai un tram antic: encara que l'horari hagi
+ * canviat des de llavors (o que es desés sota HORA_FORA_HORARI), la
+ * franja segueix sent accessible des del selector.
+ */
+function horesAmbDades(grupId, dataISO) {
+  return tramsAmbDades(grupId)
+    .map(descompondreTramId)
+    .filter(t => t.dataISO === dataISO)
+    .map(t => t.hora);
+}
+
+/**
+ * Totes les franges que té sentit oferir per a un grup i un dia:
+ * primer les de l'horari, després les que ja tenen dades desades i
+ * no hi surten, i sempre HORA_FORA_HORARI al final.
+ */
+function horesDisponibles(grupId, dataISO) {
+  return [...new Set([
+    ...horesSegonsHorari(grupId, dataISO),
+    ...horesAmbDades(grupId, dataISO),
+    HORA_FORA_HORARI
+  ])];
+}
+
+/**
+ * Quina franja s'ha de mostrar per defecte en obrir un dia: la
+ * primera classe que l'horari diu que hi havia; si aquell dia
+ * l'horari no en diu cap, la primera que tingui dades desades; i si
+ * no hi ha res de res, HORA_FORA_HORARI (el mateix comportament que
+ * tenia l'aplicació abans d'existir el selector de dia).
+ */
+function horaPerDefecte(grupId, dataISO) {
+  const deHorari = horesSegonsHorari(grupId, dataISO);
+  if (deHorari.length > 0) return deHorari[0];
+
+  const ambDades = horesAmbDades(grupId, dataISO);
+  if (ambDades.length > 0) return ambDades[0];
+
+  return HORA_FORA_HORARI;
+}
+
+/**
+ * Retorna el tram que s'està consultant i editant ara mateix per a un
+ * grup: el dia i la franja triats al selector de la capçalera, que
+ * per defecte són els d'avui.
+ *
+ * Tots els positius i negatius (tant per clic com per teclat) es
+ * llegeixen i s'escriuen sempre en aquest tram, de manera que el
+ * selector de dia serveix alhora per repassar el passat i per
+ * corregir-lo.
  */
 function tramActiuPerGrup(grupId) {
-  const trams = tramsHoraris_avui().filter(t => t.grup === grupId);
-  const hora = trams[0]?.hora || HORA_FORA_HORARI;
-  return crearTramId(dataAvuiISO(), hora);
+  // `horaActiva` és l'estat del selector, que sempre correspon al
+  // grup que es veu en pantalla. Si es demana el tram d'un altre
+  // grup, calculem la franja que li tocaria aquell dia.
+  const hora = (grupId === grupActiu && horaActiva)
+    ? horaActiva
+    : horaPerDefecte(grupId, dataActiva);
+
+  return crearTramId(dataActiva, hora);
+}
+
+/**
+ * Diu si un tram concret ja té algun registre desat (encara que sigui
+ * a zero). Es fa servir per marcar amb ✓ les franges del selector
+ * que ja tenen alguna cosa escrita.
+ */
+function tramTeDades(grupId, tramId) {
+  const registres = dades?.[grupId]?.[tramId];
+  return Boolean(registres) && Object.keys(registres).length > 0;
 }
 
 /* ----------------------------------------------------------------
@@ -391,6 +503,124 @@ function actualitzarInfoHorari() {
   detall.textContent = " Classes d'avui: " +
     trams.map(t => `${GRUPS[t.grup].nom} (${t.hora})`).join(" · ");
   contenidor.appendChild(detall);
+}
+
+/* ----------------------------------------------------------------
+ * Selector de dia i franja (consultar i corregir trams passats)
+ * ---------------------------------------------------------------
+ * La graella sempre mostra UN tram: el que diuen `dataActiva` i
+ * `horaActiva`. En obrir l'aplicació són els d'avui, i tot funciona
+ * com sempre; movent el selector cap enrere es veuen i s'editen els
+ * positius d'un dia anterior, amb un avís ben visible perquè no es
+ * confongui amb el dia d'avui.
+ *
+ * No es pot anar cap endavant: posar positius a un dia futur no té
+ * sentit i seria fàcil de fer sense adonar-se'n.
+ * ------------------------------------------------------------- */
+
+function inicialitzarSelectorTram() {
+  const inputData = document.getElementById("selector-data");
+  const selectorHora = document.getElementById("selector-hora");
+  const botoAvui = document.getElementById("boto-avui");
+  if (!inputData || !selectorHora || !botoAvui) return;
+
+  inputData.max = dataAvuiISO();
+  inputData.value = dataActiva;
+
+  inputData.addEventListener("change", () => {
+    // El camp es pot buidar o rebre una data futura escrivint-hi a
+    // mà: en tots dos casos tornem al valor que hi havia.
+    if (!inputData.value || inputData.value > dataAvuiISO()) {
+      inputData.value = dataActiva;
+      return;
+    }
+    canviarData(inputData.value);
+  });
+
+  selectorHora.addEventListener("change", () => {
+    horaActiva = selectorHora.value;
+    mostrarTramActiu();
+  });
+
+  botoAvui.addEventListener("click", () => canviarData(dataAvuiISO()));
+}
+
+/**
+ * Canvia el dia que s'està consultant. La franja es recalcula sola
+ * (horaActiva = null), perquè la que hi hagués triada pot no existir
+ * el dia nou.
+ */
+function canviarData(dataISO) {
+  dataActiva = dataISO;
+  horaActiva = null;
+
+  const inputData = document.getElementById("selector-data");
+  if (inputData) inputData.value = dataISO;
+
+  refrescarSelectorHora();
+  mostrarTramActiu();
+}
+
+/**
+ * Reomple el desplegable de franges amb les del grup i el dia
+ * actuals, marcant amb ✓ les que ja tenen alguna cosa desada. Si la
+ * franja triada fins ara no existeix en aquesta combinació, se'n
+ * tria la que toca per defecte.
+ */
+function refrescarSelectorHora() {
+  const selector = document.getElementById("selector-hora");
+  if (!selector || !grupActiu) return;
+
+  const hores = horesDisponibles(grupActiu, dataActiva);
+
+  if (!horaActiva || !hores.includes(horaActiva)) {
+    horaActiva = horaPerDefecte(grupActiu, dataActiva);
+  }
+
+  selector.innerHTML = "";
+  for (const hora of hores) {
+    const opcio = document.createElement("option");
+    opcio.value = hora;
+    const teDades = tramTeDades(grupActiu, crearTramId(dataActiva, hora));
+    opcio.textContent = teDades ? `${hora} ✓` : hora;
+    selector.appendChild(opcio);
+  }
+
+  selector.value = horaActiva;
+}
+
+/**
+ * Mostra (o amaga) l'avís que el que es veu en pantalla NO és el dia
+ * d'avui. És deliberadament cridaner: el risc real d'aquesta funció
+ * és apuntar positius al dia equivocat sense adonar-se'n.
+ */
+function actualitzarAvisTram() {
+  const avis = document.getElementById("avis-tram");
+  if (!avis) return;
+
+  const esAvui = dataActiva === dataAvuiISO();
+  document.body.classList.toggle("mode-tram-passat", !esAvui);
+
+  if (esAvui) {
+    avis.hidden = true;
+    avis.textContent = "";
+    return;
+  }
+
+  avis.hidden = false;
+  avis.textContent =
+    `Estàs consultant ${textDataLlegible(dataActiva)} — ${horaActiva}. ` +
+    `Tot el que cliquis o teclegis s'apunta en aquest tram, no al d'avui.`;
+}
+
+/**
+ * Redibuixa tot el que depèn del tram triat (graella, avís i
+ * selector de baixada).
+ */
+function mostrarTramActiu() {
+  renderitzarGraella(grupActiu);
+  actualitzarAvisTram();
+  actualitzarDependentsDeDades(grupActiu);
 }
 
 /* ----------------------------------------------------------------
@@ -829,12 +1059,22 @@ function actualitzarDependentsDeDades(grupId) {
   if (typeof actualitzarSelectorExportacio === "function") {
     actualitzarSelectorExportacio(grupId);
   }
+
+  // Un clic pot haver estrenat un tram que abans no existia: refem el
+  // desplegable de franges perquè hi aparegui la marca ✓.
+  refrescarSelectorHora();
 }
 
 function mostrarGrup(grupId) {
   grupActiu = grupId;
   document.getElementById("titol-grup").textContent = GRUPS[grupId].nom;
+
+  // Les franges disponibles depenen del grup (cada grup té les seves
+  // hores a l'horari), així que el selector es refà en canviar-lo.
+  refrescarSelectorHora();
+
   renderitzarGraella(grupId);
+  actualitzarAvisTram();
   actualitzarDependentsDeDades(grupId);
 }
 
@@ -842,6 +1082,7 @@ function iniciarApp() {
   inicialitzarSelectorGrups();
   actualitzarInfoHorari();
   inicialitzarToggleM2();
+  inicialitzarSelectorTram();
 
   const grupInicial = document.getElementById("selector-grup").value;
   mostrarGrup(grupInicial);
