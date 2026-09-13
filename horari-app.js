@@ -33,11 +33,6 @@ const DIES_SETMANA = [
   { nom: "divendres", getDay: 5 }
 ];
 
-// Text font original d'horari.js, carregat amb fetch, usat com a
-// plantilla per generar el fitxer final (mateix patró que alta.js
-// amb el fitxer del docent i setup.js amb seients.js).
-let textHorariOriginal = null;
-
 /* ----------------------------------------------------------------
  * Estat mostrat sobre l'horari actual (abans de substituir-lo)
  * ------------------------------------------------------------- */
@@ -46,13 +41,22 @@ function actualitzarEstatHorariActual() {
   const contenidor = document.getElementById("estat-horari-actual");
   const nTrams = Object.values(HORARI).reduce((total, trams) => total + trams.length, 0);
 
+  const textOrigen = {
+    navegador: `desat en aquest navegador el ${CONFIG_HORARI.actualitzat()}`,
+    fitxer: "carregat des d'un fitxer",
+    exemple: "encara és el d'exemple, no el teu"
+  };
+
   if (nTrams === 0) {
-    contenidor.textContent = "Encara no hi ha cap classe a l'horari.";
-  } else {
     contenidor.textContent =
-      `Ara mateix hi ha ${nTrams} classes repartides a l'horari. ` +
-      `Si continues, es SUBSTITUIRAN completament per la graella nova.`;
+      "Encara no hi ha cap classe a l'horari. Enganxa la graella de l'Excel " +
+      "aquí sota i clica «Desa aquest horari».";
+    return;
   }
+
+  contenidor.textContent =
+    `Ara mateix hi ha ${nTrams} classes a l'horari (${textOrigen[CONFIG_HORARI.origen()]}). ` +
+    `Si en deses un de nou, es SUBSTITUIRAN totes.`;
 }
 
 /* ----------------------------------------------------------------
@@ -240,7 +244,6 @@ function actualitzarPrevisualitzacio() {
   const nClasses = Object.values(horari).reduce((total, trams) => total + trams.length, 0);
 
   const comptador = document.getElementById("previsualitzacio-comptador");
-  const boto = document.getElementById("boto-descarregar-horari");
   const contenidorGraella = document.getElementById("previsualitzacio-graella");
   const contenidorAvisos = document.getElementById("previsualitzacio-avisos");
 
@@ -249,14 +252,14 @@ function actualitzarPrevisualitzacio() {
 
   if (text.trim().length === 0) {
     comptador.textContent = "Encara no has enganxat cap horari.";
-    boto.disabled = true;
     horariPrevisualitzat = null;
+    actualitzarBotons();
     return;
   }
 
   comptador.textContent = `${nClasses} classes detectades.`;
-  boto.disabled = nClasses === 0;
-  horariPrevisualitzat = horari;
+  horariPrevisualitzat = nClasses > 0 ? horari : null;
+  actualitzarBotons();
 
   dibuixarGraellaPrevisualitzacio(contenidorGraella, horari);
 
@@ -309,120 +312,129 @@ function dibuixarGraellaPrevisualitzacio(contenidor, horari) {
 let horariPrevisualitzat = null;
 
 /* ----------------------------------------------------------------
- * Generació de l'horari.js final
+ * Desar, exportar i importar l'horari
+ * ---------------------------------------------------------------
+ * L'horari NO viu a horari.js: es desa en aquest navegador (vegeu
+ * horari.js, que és només el carregador). Per això el botó important
+ * d'aquesta pàgina és "Desa", no la descàrrega: desant-lo ja queda
+ * actiu a la resta de pàgines, i hi continua després de tancar la
+ * pestanya. La descàrrega és una còpia de seguretat.
  * ------------------------------------------------------------- */
 
-async function carregarTextHorariOriginal() {
-  const resposta = await fetch("horari.js");
-  textHorariOriginal = await resposta.text();
-}
-
 /**
- * Genera el codi del bloc "const HORARI = { ... };" a partir de
- * l'estructura horariPrevisualitzat, amb el mateix estil que ja fem
- * servir a horari.js (una línia per tram, comentari amb el nom del
- * dia, textFranjaHoraria(...) en lloc d'hora escrita a mà).
+ * Desa l'horari previsualitzat i el deixa actiu immediatament. No
+ * cal recarregar res: HORARI apunta al mateix objecte que acabem de
+ * substituir.
  */
-function generarBlocHorari(horari) {
-  const nomsDies = {
-    1: "Dilluns", 2: "Dimarts", 3: "Dimecres", 4: "Dijous", 5: "Divendres"
-  };
-
-  const filesDies = [1, 2, 3, 4, 5].map(getDayKey => {
-    const trams = horari[getDayKey] || [];
-    const comentari = nomsDies[getDayKey];
-
-    if (trams.length === 0) {
-      return `  ${getDayKey}: [], // ${comentari}`;
-    }
-
-    const numerosFranja = trams.map(t =>
-      FRANGES_HORARIES.find(f => textFranjaHoraria(f.numero) === t.hora)?.numero
-    );
-
-    const liniesTrams = trams.map((t, i) =>
-      `    { hora: textFranjaHoraria(${numerosFranja[i]}), grup: ${JSON.stringify(t.grup)} }`
-    );
-
-    return `  ${getDayKey}: [ // ${comentari}\n${liniesTrams.join(",\n")}\n  ]`;
-  });
-
-  return `const HORARI = {\n${filesDies.join(",\n")}\n};`;
-}
-
-/**
- * Substitueix, dins el text original d'horari.js, el bloc
- * "const HORARI = { ... };" pel generat a partir de la
- * previsualització actual. FRANGES_HORARIES i MAX_POSITIUS_DIA
- * queden intactes.
- */
-function generarTextHorariActualitzat(horari) {
-  const patroBloc = /const HORARI = \{[\s\S]*?\n\};/;
-
-  if (!patroBloc.test(textHorariOriginal)) {
-    console.error("No s'ha trobat el bloc 'const HORARI = { ... };' a horari.js");
-    return textHorariOriginal;
-  }
-
-  return textHorariOriginal.replace(patroBloc, generarBlocHorari(horari));
-}
-
-async function descarregarHorariActualitzat() {
+function desarHorari() {
   if (!horariPrevisualitzat) return;
 
-  if (!textHorariOriginal) {
-    try {
-      await carregarTextHorariOriginal();
-    } catch (error) {
-      console.error("No s'ha pogut carregar horari.js:", error);
-      alert(
-        "No s'ha pogut llegir horari.js del servidor, així que no es pot " +
-        "generar la descàrrega. Comprova que la pàgina s'obre per http(s) " +
-        "(amb un servidor local), no fent doble clic sobre el fitxer."
-      );
-      return;
-    }
+  const nTrams = Object.values(horariPrevisualitzat)
+    .reduce((total, trams) => total + trams.length, 0);
+
+  const confirmat = confirm(
+    `Vols substituir l'horari actual per aquest, amb ${nTrams} classes?\n\n` +
+    `Quedarà desat en aquest navegador i actiu de seguida a la resta de ` +
+    `pàgines. L'horari anterior no es pot recuperar.`
+  );
+  if (!confirmat) return;
+
+  const desat = CONFIG_HORARI.desaHorari(horariPrevisualitzat);
+  const contenidor = document.getElementById("estat-horari-actual");
+
+  if (!desat) {
+    contenidor.textContent =
+      "El navegador no ha deixat desar l'horari. Si estàs en una finestra " +
+      "privada, prova-ho en una de normal.";
+    return;
   }
 
-  const text = generarTextHorariActualitzat(horariPrevisualitzat);
-  const blob = new Blob([text], { type: "text/javascript;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
+  actualitzarEstatHorariActual();
+  actualitzarBotons();
 
-  const enllaç = document.createElement("a");
-  enllaç.href = url;
-  enllaç.download = "horari.js";
-  document.body.appendChild(enllaç);
-  enllaç.click();
-  document.body.removeChild(enllaç);
+  document.getElementById("estat-horari-actual").textContent +=
+    " Descarrega'n una còpia si vols poder-lo recuperar en un altre ordinador.";
+}
 
-  URL.revokeObjectURL(url);
+function descarregarCopiaHorari() {
+  const nom = CONFIG_HORARI.descarrega();
+  document.getElementById("estat-horari-actual").textContent =
+    `S'ha descarregat ${nom}. Guarda'l per poder recuperar aquest horari ` +
+    `en un altre ordinador o si esborres les dades del navegador.`;
+}
+
+/**
+ * Carrega un fitxer d'horari descarregat abans (o un horari.js d'una
+ * versió anterior). No cal recarregar: el carregador republica
+ * HORARI i aquí només hem de refrescar el que es veu.
+ */
+function importarHorari(fitxer) {
+  const contenidor = document.getElementById("estat-horari-actual");
+
+  CONFIG_HORARI.importa(fitxer).then((dades) => {
+    if (!CONFIG_HORARI.desaTot(dades)) {
+      contenidor.textContent =
+        "El navegador no ha deixat desar l'horari. Si estàs en una finestra " +
+        "privada, prova-ho en una de normal.";
+      return;
+    }
+    actualitzarEstatHorariActual();
+    contenidor.textContent =
+      `S'ha carregat ${fitxer.name} i ja és l'horari actiu. ` +
+      contenidor.textContent;
+  }).catch((error) => {
+    contenidor.textContent = error.message;
+  });
+}
+
+function inicialitzarCarregaHorari() {
+  const boto = document.getElementById("boto-carregar-horari");
+  const entrada = document.getElementById("fitxer-horari");
+  if (!boto || !entrada) return;
+
+  boto.addEventListener("click", () => entrada.click());
+
+  entrada.addEventListener("change", () => {
+    const fitxer = entrada.files && entrada.files[0];
+    if (!fitxer) return;
+    importarHorari(fitxer);
+    entrada.value = "";
+  });
+}
+
+/**
+ * "Desa" només té sentit si hi ha una graella vàlida enganxada; la
+ * descàrrega, en canvi, sempre serveix (exporta l'horari actiu).
+ */
+function actualitzarBotons() {
+  const desar = document.getElementById("boto-desar-horari");
+  if (desar) desar.disabled = horariPrevisualitzat === null;
 }
 
 /* ----------------------------------------------------------------
  * Punt d'entrada
  * ------------------------------------------------------------- */
 
-async function iniciarHorariApp() {
+function iniciarHorariApp() {
   actualitzarEstatHorariActual();
   actualitzarPrevisualitzacio();
+  actualitzarBotons();
+  inicialitzarCarregaHorari();
 
   document
     .getElementById("textarea-horari")
-    .addEventListener("input", actualitzarPrevisualitzacio);
+    .addEventListener("input", () => {
+      actualitzarPrevisualitzacio();
+      actualitzarBotons();
+    });
+
+  document
+    .getElementById("boto-desar-horari")
+    .addEventListener("click", desarHorari);
 
   document
     .getElementById("boto-descarregar-horari")
-    .addEventListener("click", descarregarHorariActualitzat);
-
-  try {
-    await carregarTextHorariOriginal();
-  } catch (error) {
-    console.error("No s'ha pogut carregar horari.js:", error);
-    const contenidor = document.getElementById("estat-horari-actual");
-    contenidor.textContent =
-      "No s'ha pogut llegir horari.js del servidor. Comprova que el fitxer " +
-      "és a la mateixa carpeta i que la pàgina s'obre per http(s), no com a fitxer local.";
-  }
+    .addEventListener("click", descarregarCopiaHorari);
 }
 
 document.addEventListener("DOMContentLoaded", iniciarHorariApp);

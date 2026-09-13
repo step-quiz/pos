@@ -39,13 +39,6 @@ let assignacions = {};
 // banqueta (alumnes encara sense seient).
 let arrossegant = null;
 
-// Text font original de seients.js, carregat amb fetch. El fem
-// servir com a plantilla per generar el fitxer final: només hi
-// reemplacem el bloc SEIENTS["grupId"] del grup editat, i deixem la
-// resta (comentaris, DISPOSICIO_AULA, altres grups...) exactament
-// igual.
-let textSeientsOriginal = null;
-
 /* ----------------------------------------------------------------
  * Seients: identificador i utilitats
  * ------------------------------------------------------------- */
@@ -312,7 +305,7 @@ function deixarAnarASeient(seientDesti) {
 
   assignacions[seientDesti] = alumneId;
 
-  renderitzarTot();
+  aplicarCanvis();
 }
 
 /**
@@ -329,7 +322,7 @@ function deixarAnarABanqueta() {
   if (!origen) return;
 
   delete assignacions[origen];
-  renderitzarTot();
+  aplicarCanvis();
 }
 
 function inicialitzarBanquetaComADiana() {
@@ -357,12 +350,55 @@ function inicialitzarBanquetaComADiana() {
 }
 
 /**
- * Redibuixa tot el que depèn de `assignacions`.
+ * Redibuixa tot el que depèn de `assignacions`, sense desar res.
  */
 function renderitzarTot() {
   renderitzarGraella();
   renderitzarBanqueta();
   actualitzarComptador();
+}
+
+/**
+ * Desa la distribució del grup que s'està editant i redibuixa la
+ * pàgina. És el que crida QUALSEVOL canvi (clic, arrossegament,
+ * buidar l'aula): la feina queda desada al navegador a l'instant, de
+ * manera que tancar la pestanya o canviar de pàgina no la perd.
+ *
+ * La descàrrega d'els-meus-seients.js és, per tant, una còpia de
+ * seguretat, no el mecanisme per guardar.
+ */
+function aplicarCanvis() {
+  const desat = CONFIG_SEIENTS.desaGrup(grupSetup, llistaSeientsDelGrup(grupSetup));
+  renderitzarTot();
+  actualitzarEstatDesat(desat);
+}
+
+/**
+ * Text discret sota la graella que diu d'on surt la distribució que
+ * s'està veient i quan es va desar per última vegada.
+ */
+function actualitzarEstatDesat(desatCorrectament = true) {
+  const contenidor = document.getElementById("estat-seients");
+  if (!contenidor) return;
+
+  if (desatCorrectament === false) {
+    contenidor.textContent =
+      "El navegador no ha deixat desar la distribució. Si estàs en una " +
+      "finestra privada, prova-ho en una de normal.";
+    contenidor.classList.add("estat-seients--error");
+    return;
+  }
+
+  contenidor.classList.remove("estat-seients--error");
+
+  const textOrigen = {
+    navegador: "Desat en aquest navegador",
+    fitxer: "Carregat des d'un fitxer",
+    exemple: "Distribució d'exemple (encara no has desat res)"
+  };
+
+  contenidor.textContent =
+    `${textOrigen[CONFIG_SEIENTS.origen()]} · ${CONFIG_SEIENTS.actualitzat()}`;
 }
 
 /* ----------------------------------------------------------------
@@ -450,7 +486,7 @@ function assignarSeient(seientId, alumneId) {
     delete assignacions[seientId];
   }
 
-  renderitzarTot();
+  aplicarCanvis();
 }
 
 /* ----------------------------------------------------------------
@@ -460,7 +496,6 @@ function assignarSeient(seientId, alumneId) {
 function actualitzarComptador() {
   const contenidor = document.getElementById("comptador-pendents");
   const pendents = alumnesSenseAssignar(grupSetup);
-  const boto = document.getElementById("boto-descarregar-config");
 
   if (pendents.length === 0) {
     contenidor.textContent = "Tots els alumnes tenen seient assignat.";
@@ -472,8 +507,6 @@ function actualitzarComptador() {
       : `Falten ${pendents.length} alumnes per assignar.`;
     contenidor.classList.remove("comptador--complet");
   }
-
-  boto.disabled = pendents.length > 0;
 }
 
 /* ----------------------------------------------------------------
@@ -481,87 +514,79 @@ function actualitzarComptador() {
  * ------------------------------------------------------------- */
 
 /**
- * Carrega el text font original de seients.js (una sola vegada) per
- * fer-lo servir de plantilla en generar el fitxer final.
- */
-async function carregarTextSeientsOriginal() {
-  const resposta = await fetch("seients.js");
-  textSeientsOriginal = await resposta.text();
-}
-
-/**
- * Retorna el codi (cos de l'array, sense claudàtors) amb un seient
- * per línia, en el mateix estil que ja fem servir a seients.js:
- *   { alumneId: "1ESOA-01", fila: 1, taula: 1, costat: "esquerra" },
+ * Converteix les assignacions en curs en la llista de seients que
+ * es desa i s'exporta:
+ *   { alumneId: "1ESOA-01", fila: 1, taula: 1, costat: "esquerra" }
  *
- * Els seients es generen ordenats per fila/taula/costat (l'ordre en
- * què estan físicament a l'aula), no per l'ordre en què s'han anat
- * clicant, perquè el fitxer quedi llegible.
+ * Es genera ordenada per fila/taula/costat (l'ordre en què estan
+ * físicament a l'aula), no per l'ordre en què s'han anat clicant,
+ * perquè el fitxer descarregat quedi llegible.
  */
-function generarCosArraySeients(grupId) {
-  const seients = totsElsSeients()
+function llistaSeientsDelGrup(grupId) {
+  return totsElsSeients()
     .map(({ fila, taula, costat }) => {
       const seientId = crearSeientId(fila, taula, costat);
       const alumneId = assignacions[seientId];
       return alumneId ? { alumneId, fila, taula, costat } : null;
     })
     .filter(Boolean);
-
-  const linies = seients.map(s =>
-    `    { alumneId: ${JSON.stringify(s.alumneId)}, fila: ${s.fila}, taula: ${s.taula}, costat: ${JSON.stringify(s.costat)} }`
-  );
-
-  return linies.join(",\n");
 }
 
 /**
- * Substitueix, dins el text original de seients.js, el bloc
- * SEIENTS["grupId"] = [ ... ] pel de les noves assignacions. La
- * resta del fitxer (comentaris, DISPOSICIO_AULA, altres grups...)
- * queda intacta.
+ * Descarrega una còpia de seguretat amb la distribució de TOTS els
+ * grups, no només del que s'està editant. Serveix per guardar-la
+ * fora del navegador o per passar-la a un altre ordinador.
  */
-function generarTextSeientsActualitzat(grupId) {
-  const idText = JSON.stringify(grupId);
-  const patroBloc = new RegExp(
-    String.raw`${idText}\s*:\s*\[[\s\S]*?\](?=\s*[,}])`
-  );
-
-  if (!patroBloc.test(textSeientsOriginal)) {
-    console.error(`No s'ha trobat el bloc SEIENTS[${idText}] a seients.js`);
-    return textSeientsOriginal;
-  }
-
-  const nouBloc = `${idText}: [\n${generarCosArraySeients(grupId)}\n  ]`;
-  return textSeientsOriginal.replace(patroBloc, nouBloc);
+function descarregarCopiaSeients() {
+  const nom = CONFIG_SEIENTS.descarrega();
+  mostrarEstatSeients(`S'ha descarregat ${nom}. Guarda'l per poder recuperar ` +
+                      `aquesta distribució en un altre ordinador.`);
 }
 
-async function descarregarSeientsActualitzat() {
-  if (!textSeientsOriginal) {
-    try {
-      await carregarTextSeientsOriginal();
-    } catch (error) {
-      console.error("No s'ha pogut carregar seients.js:", error);
-      alert(
-        "No s'ha pogut llegir seients.js del servidor, així que no es pot " +
-        "generar la descàrrega. Comprova que la pàgina s'obre per http(s) " +
-        "(amb un servidor local), no fent doble clic sobre el fitxer."
-      );
+/**
+ * Carrega un fitxer de seients descarregat abans (o un seients.js
+ * d'una versió anterior). No cal recarregar la pàgina: el carregador
+ * republica DISPOSICIO_AULA i SEIENTS, i aquí només hem de tornar a
+ * pintar el grup que s'estava editant.
+ */
+function importarSeients(fitxer) {
+  CONFIG_SEIENTS.importa(fitxer).then((dades) => {
+    // El fitxer substitueix la configuració sencera: disposició de
+    // l'aula i tots els grups que hi hagi a dins.
+    if (!CONFIG_SEIENTS.desaTot(dades)) {
+      mostrarEstatSeients(
+        "El navegador no ha deixat desar la configuració. Si estàs en " +
+        "una finestra privada, prova-ho en una de normal.", true);
       return;
     }
-  }
 
-  const text = generarTextSeientsActualitzat(grupSetup);
-  const blob = new Blob([text], { type: "text/javascript;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
+    carregarGrup(grupSetup);
+    mostrarEstatSeients(`S'ha carregat ${fitxer.name}.`);
+  }).catch((error) => {
+    mostrarEstatSeients(error.message, true);
+  });
+}
 
-  const enllaç = document.createElement("a");
-  enllaç.href = url;
-  enllaç.download = "seients.js";
-  document.body.appendChild(enllaç);
-  enllaç.click();
-  document.body.removeChild(enllaç);
+function mostrarEstatSeients(missatge, esError) {
+  const contenidor = document.getElementById("estat-seients");
+  if (!contenidor) return;
+  contenidor.textContent = missatge;
+  contenidor.classList.toggle("estat-seients--error", Boolean(esError));
+}
 
-  URL.revokeObjectURL(url);
+function inicialitzarCarregaSeients() {
+  const boto = document.getElementById("boto-carregar-seients");
+  const entrada = document.getElementById("fitxer-seients");
+  if (!boto || !entrada) return;
+
+  boto.addEventListener("click", () => entrada.click());
+
+  entrada.addEventListener("change", () => {
+    const fitxer = entrada.files && entrada.files[0];
+    if (!fitxer) return;
+    importarSeients(fitxer);
+    entrada.value = "";
+  });
 }
 
 /**
@@ -569,41 +594,41 @@ async function descarregarSeientsActualitzat() {
  * totes les taules buides). Demana confirmació abans, ja que no es
  * pot desfer.
  */
-function esborrarTotesLesAssignacions() {
-  const teAlgunaAssignacio = Object.keys(assignacions).length > 0;
-  if (!teAlgunaAssignacio) return;
+function buidarAula() {
+  const quants = Object.keys(assignacions).length;
+  if (quants === 0) return;
 
   const confirmat = confirm(
-    `Segur que vols esborrar les ${Object.keys(assignacions).length} assignacions de ${GRUPS[grupSetup].nom}? Aquesta acció no es pot desfer.`
+    `Vols treure del seu lloc els ${quants} alumnes de ${GRUPS[grupSetup].nom}?\n\n` +
+    `Tots tornaran a la banqueta i l'aula quedarà buida, a punt per fer una ` +
+    `distribució nova. Els altres grups no es toquen.`
   );
   if (!confirmat) return;
 
   assignacions = {};
-  renderitzarTot();
+  aplicarCanvis();
 }
 
 /* ----------------------------------------------------------------
  * Punt d'entrada
  * ------------------------------------------------------------- */
 
-async function iniciarSetup() {
+function iniciarSetup() {
   inicialitzarSelectorGrups();
   inicialitzarBanquetaComADiana();
+  inicialitzarCarregaSeients();
 
   const grupInicial = document.getElementById("selector-grup-setup").value;
   carregarGrup(grupInicial);
+  actualitzarEstatDesat();
 
-  // Els listeners es registren SEMPRE, encara que la càrrega del
-  // text original falli — així la pàgina segueix sent interactiva
-  // (assignar seients, veure el comptador) independentment que el
-  // fetch de seients.js vagi bé o no.
   document
     .getElementById("boto-descarregar-config")
-    .addEventListener("click", descarregarSeientsActualitzat);
+    .addEventListener("click", descarregarCopiaSeients);
 
   document
-    .getElementById("boto-esborrar-tot")
-    .addEventListener("click", esborrarTotesLesAssignacions);
+    .getElementById("boto-buidar-aula")
+    .addEventListener("click", buidarAula);
 
   // Tanca el desplegable flotant si es clica fora de qualsevol seient.
   document.addEventListener("click", (event) => {
@@ -611,17 +636,6 @@ async function iniciarSetup() {
       tancarSelectorObert();
     }
   });
-
-  try {
-    await carregarTextSeientsOriginal();
-  } catch (error) {
-    console.error("No s'ha pogut carregar seients.js:", error);
-    const contenidor = document.getElementById("comptador-pendents");
-    contenidor.textContent =
-      "No s'ha pogut llegir seients.js del servidor. Comprova que el fitxer " +
-      "és a la mateixa carpeta i que la pàgina s'obre per http(s), no com a fitxer local.";
-    contenidor.classList.remove("comptador--complet");
-  }
 }
 
 document.addEventListener("DOMContentLoaded", iniciarSetup);

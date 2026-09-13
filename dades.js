@@ -44,10 +44,10 @@
   /* ================================================================
    * Validació
    *
-   * Un fitxer importat pot ser qualsevol cosa: un profdani.js d'un
-   * altre curs, un alumnes.js antic, o un fitxer que no toca. Val
-   * més dir què falla que carregar mitges dades i fallar més tard
-   * amb un error incomprensible enmig d'una classe.
+   * Un fitxer importat pot ser qualsevol cosa: el d'un altre curs,
+   * el d'un company, o un fitxer que no toca. Val més dir què falla
+   * que carregar mitges dades i fallar més tard amb un error
+   * incomprensible enmig d'una classe.
    * ============================================================= */
 
   function valida(dades) {
@@ -55,8 +55,7 @@
       return 'El fitxer no defineix cap dada.';
     }
     if (!dades.grups || typeof dades.grups !== 'object') {
-      return 'El fitxer no té cap grup. Si és un alumnes.js antic, ' +
-             'consulta LLEGEIX-ME-dades.md per convertir-lo.';
+      return 'El fitxer no té cap grup a dins.';
     }
 
     for (const clau of Object.keys(dades.grups)) {
@@ -104,62 +103,73 @@
   }
 
   /* ================================================================
-   * Importar un profdani.js
+   * Importar un fitxer de classes
    *
    * El fitxer és JavaScript, no JSON, perquè així també es pot
    * deixar al costat de l'index.html i carregar-lo amb una etiqueta
-   * <script>. Per llegir-lo aquí el convertim en una URL temporal i
-   * deixem que el navegador l'executi: fem servir el seu propi
-   * intèrpret en comptes d'eval() sobre una cadena.
+   * <script>. Per llegir-lo aquí l'executem dins d'un new Function:
+   * a diferència d'una etiqueta <script> temporal, això ens deixa
+   * veure un `const GRUPS = {...}` de dalt de tot del fitxer, que és
+   * com estaven fets els alumnes.js antics. Així no cal convertir-los
+   * a mà per poder-los recuperar.
    * ============================================================= */
 
+  /**
+   * Executa el text del fitxer i en treu les dades, tant del format
+   * actual (window.DOCENT) com d'un alumnes.js antic (const GRUPS).
+   */
+  function extreu(textFitxer) {
+    const cos = textFitxer + `
+      ;if (typeof DOCENT !== 'undefined' && DOCENT) {
+         return DOCENT;
+       }
+       if (typeof GRUPS !== 'undefined' && GRUPS) {
+         return { format: 0, docent: '', curs: '', actualitzat: null, grups: GRUPS };
+       }
+       return undefined;
+    `;
+    return new Function(cos)();
+  }
+
   function importa(fitxer) {
-    return new Promise((resol, rebutja) => {
-      const anterior = global.DOCENT;
+    return fitxer.text().then(function (text) {
+      let dades;
+
+      // Amaguem els globals que publiquem nosaltres mentre dura la
+      // lectura: si no, un fitxer qualsevol veuria el GRUPS que ja hi
+      // ha carregat i semblaria vàlid. Vegeu seients.js.
+      const amagats = { DOCENT: global.DOCENT, GRUPS: global.GRUPS };
       global.DOCENT = undefined;
+      global.GRUPS = undefined;
 
-      const url = URL.createObjectURL(fitxer);
-      const script = document.createElement('script');
-
-      function neteja() {
-        URL.revokeObjectURL(url);
-        script.remove();
+      try {
+        dades = extreu(text);
+      } catch (error) {
+        throw new Error(
+          'El fitxer té un error de sintaxi i no s\'ha pogut llegir. ' +
+          'Si l\'has editat a mà, revisa les comes.'
+        );
+      } finally {
+        global.DOCENT = amagats.DOCENT;
+        global.GRUPS = amagats.GRUPS;
       }
 
-      script.onload = function () {
-        const dades = global.DOCENT;
-        neteja();
+      if (!dades) {
+        throw new Error(
+          'El fitxer s\'ha llegit però no hi ha cap llista de classes a ' +
+          'dins. Assegura\'t que és el teu fitxer de docent, o un ' +
+          'alumnes.js d\'una versió anterior.'
+        );
+      }
 
-        if (dades === undefined) {
-          global.DOCENT = anterior;
-          rebutja(new Error(
-            'El fitxer s\'ha llegit però no defineix window.DOCENT. ' +
-            'Assegura\'t que és un profdani.js i no un alumnes.js antic.'
-          ));
-          return;
-        }
+      if (!dades.actualitzat) {
+        dades.actualitzat = new Date().toISOString().slice(0, 10);
+      }
 
-        const error = valida(dades);
-        if (error) {
-          global.DOCENT = anterior;
-          rebutja(new Error(error));
-          return;
-        }
+      const error = valida(dades);
+      if (error) throw new Error(error);
 
-        resol(dades);
-      };
-
-      script.onerror = function () {
-        neteja();
-        global.DOCENT = anterior;
-        rebutja(new Error(
-          'El fitxer té un error de sintaxi i el navegador no l\'ha pogut ' +
-          'llegir. Si l\'has editat a mà, revisa les comes.'
-        ));
-      };
-
-      script.src = url;
-      document.head.appendChild(script);
+      return dades;
     });
   }
 
@@ -420,6 +430,7 @@
       } : null;
     },
     tot: function () { return dades; },
+    importa: importa,
     desa: function () { return dades ? desa(dades) : false; },
     descarrega: function () { return dades ? descarrega(dades) : null; },
     anomena: function () { return dades ? anomena(dades) : null; },

@@ -29,7 +29,7 @@ Ara viuen en un fitxer teu, fora del projecte, que carregues des de la pàgina.
 6. **Desa i descarrega.** Guarda el fitxer on el puguis tornar a trobar.
 7. Repeteix des del pas 4 per a cada grup. Tots van al mateix fitxer.
 
-Després, `setup.html` per als seients i `horari.js` per a l'horari, com sempre.
+Després, `horari.html` per a l'horari i `setup.html` per als seients. Aquests dos també han passat al mateix model que `dades.js`: la configuració es desa al navegador (`pos-seients-v1`, `pos-horari-v1`) i els fitxers `seients.js` i `horari.js` del repositori ja només són els carregadors. Vegeu la secció "On es guarden les dades" del README. Els tres carregadors accepten també els fitxers del format antic (`const GRUPS`, `const SEIENTS`, `const HORARI`), de manera que un `alumnes.js` d'abans es pot carregar tal qual, sense convertir-lo.
 
 ## Els altres dies
 

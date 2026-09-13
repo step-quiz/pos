@@ -45,12 +45,22 @@
 
     <section class="targeta-descarrega">
       <span class="avis-substitucio">
-        Substitueix per complet l'horari actual (HORARI). Les franges
-        horàries (FRANGES_HORARIES) no es toquen.
+        Desar substitueix per complet l'horari actual i el deixa actiu de
+        seguida a la resta de pàgines, sense haver de descarregar res. Les
+        franges horàries del centre no es toquen.
       </span>
-      <button id="boto-descarregar-horari" type="button" disabled>
-        Descarrega horari.js ⭳
-      </button>
+      <div class="targeta-descarrega-botons">
+        <button id="boto-carregar-horari" type="button" class="boto-secundari">
+          Carrega un fitxer…
+        </button>
+        <button id="boto-descarregar-horari" type="button" class="boto-secundari">
+          Descarrega l'horari actiu ⭳
+        </button>
+        <button id="boto-desar-horari" type="button" disabled>
+          Desa i activa
+        </button>
+      </div>
+      <input id="fitxer-horari" type="file" accept=".js,text/javascript" hidden />
     </section>
 
   </div>

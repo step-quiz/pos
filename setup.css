@@ -129,6 +129,24 @@
   color: var(--text-3);
 }
 
+.boto-buidar-aula {
+  margin-left: auto;
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+/* Text discret que diu d'on surt la distribució i quan es va desar. */
+
+.estat-seients {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.estat-seients--error {
+  color: var(--vermell);
+  font-weight: 600;
+}
+
 .banqueta-llista {
   display: flex;
   flex-wrap: wrap;

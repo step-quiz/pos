@@ -501,7 +501,9 @@ function actualitzarInfoHorari() {
 
   const detall = document.createElement("span");
   detall.textContent = " Classes d'avui: " +
-    trams.map(t => `${GRUPS[t.grup].nom} (${t.hora})`).join(" · ");
+    // L'horari i les llistes de classe es desen per separat: pot
+    // referir-se a un grup que ja no existeix, i això no ha de petar.
+    trams.map(t => `${GRUPS[t.grup]?.nom || t.grup} (${t.hora})`).join(" · ");
   contenidor.appendChild(detall);
 }
 

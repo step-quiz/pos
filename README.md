@@ -17,7 +17,8 @@ del navegador.
 - [El límit per tram: entre -4 i +3, no per dia](#el-límit-per-tram-entre--4-i-3-no-per-dia)
 - [Consultar i corregir dies passats](#consultar-i-corregir-dies-passats)
 - [Exportar a Excel](#exportar-a-excel)
-- [Estructura de dades i el patró "regenera i descarrega"](#estructura-de-dades-i-el-patró-regenera-i-descarrega)
+- [On es guarden les dades](#on-es-guarden-les-dades)
+- [Identificadors d'alumne](#identificadors-dalumne)
 - [Fitxers del projecte](#fitxers-del-projecte)
 - [Com posar-ho en marxa](#com-posar-ho-en-marxa)
 - [Limitacions conegudes](#limitacions-conegudes)
@@ -31,9 +32,10 @@ del navegador.
 | `setup.html` | Assignar quin alumne seu a quina taula/costat. |
 | `horari.html` | Enganxar l'horari oficial del centre (copiat des d'un Excel) perquè l'app sàpiga quin grup toca a cada hora. |
 
-Totes quatre comparteixen la mateixa base de dades (el fitxer del docent,
-`seients.js`, `horari.js`) i es naveguen entre elles amb els enllaços de la
-capçalera.
+Totes quatre comparteixen les mateixes dades, desades al navegador
+(llistes d'alumnat, seients i horari), i es naveguen entre elles amb els
+enllaços de la capçalera. Vegeu
+[On es guarden les dades](#on-es-guarden-les-dades).
 
 ## Assignar positius i negatius: M1 (clic) i M2 (teclat)
 
@@ -122,6 +124,14 @@ alumnes que encara no tenen seient. Des d'allà:
   si està ocupada, **els dos alumnes s'intercanvien el lloc** (útil per
   separar o ajuntar parelles sense haver de buidar res primer).
 
+Per fer una distribució nova de zero, el botó **Buida l'aula** (al costat
+de la banqueta) treu de cop tots els alumnes del grup del seu lloc i els
+hi torna, sense haver-los d'anar arrossegant un per un. Només afecta el
+grup que estiguis editant.
+
+Cada canvi queda desat al navegador immediatament: no cal descarregar res
+per no perdre la feina.
+
 Mentre es porta un alumne pel damunt, les taules lliures es marquen en
 blau i la banqueta en ambre, per veure d'un cop d'ull on es pot deixar
 anar. Si es deixa anar fora de qualsevol diana (per exemple, al marge),
@@ -193,18 +203,59 @@ el tram, per no confondre'l amb el d'una altra hora.
 
 [SheetJS]: https://sheetjs.com/
 
-## Estructura de dades i el patró "regenera i descarrega"
+## On es guarden les dades
 
-Com que no hi ha backend, `alta.html` i `setup.html` no "guarden" els
-canvis enlloc: en comptes d'això, **regeneren el fitxer de dades sencer
-(el fitxer del docent o `seients.js`) i el descarreguen**, i és el
-professor qui l'ha de desar manualment sobre el fitxer del mateix nom
-dins la carpeta del projecte, substituint-lo. És per això que cal tornar
-a obrir el projecte des d'un servidor local després de fer canvis (vegeu
-[Com posar-ho en marxa](#com-posar-ho-en-marxa)): la pàgina llegeix el seu
-propi fitxer de dades amb `fetch` per saber què ha de regenerar.
+No hi ha backend. **Les tres coses que canvien cada curs es desen al
+`localStorage` d'aquest navegador**, cadascuna amb el seu carregador:
 
-Cada alumne, a `alumnes.js`, té tres camps:
+| Què | Carregador | Clau | On es crea |
+|---|---|---|---|
+| Llistes d'alumnat | `dades.js` | `pos-docent-v1` | `alta.html` |
+| Qui seu on | `seients.js` | `pos-seients-v1` | `setup.html` |
+| Horari del curs | `horari.js` | `pos-horari-v1` | `horari.html` |
+
+Els tres fitxers `.js` del repositori **no contenen les teves dades**:
+són només el codi que les carrega, les valida, les desa i les deixa
+exportar. Cadascun busca, per ordre: un fitxer teu carregat amb
+`<script src>`, el que hi hagi desat al navegador, i finalment unes
+dades d'exemple.
+
+**Desar és automàtic.** `setup.html` desa a cada canvi de seient i
+`horari.html` desa quan cliques «Desa aquest horari». No cal descarregar
+res per treballar del dia a dia: canvia de pestanya, tanca el navegador
+o apaga l'ordinador i ho retrobaràs igual.
+
+**Descarregar és la còpia de seguretat.** Cada pàgina té un botó que
+genera un fitxer (`els-meus-seients.js`, `el-meu-horari.js`, el teu
+`profdani.js`) i un altre per tornar-lo a carregar. Serveix per passar
+la configuració a un altre ordinador, o per recuperar-la si esborres les
+dades de navegació. Aquests fitxers es poden llegir i editar a mà, però
+són generats: el format normal és crear-los des de l'aplicació. La
+descàrrega està sempre disponible, encara que la configuració estigui a
+mitges.
+
+**També s'accepten els fitxers antics.** Un `seients.js`, `horari.js` o
+`alumnes.js` d'una versió anterior (dels que declaraven `const SEIENTS =
+{...}`) es pot carregar directament, sense convertir-lo a mà. Els
+carregadors executen el fitxer dins d'un `new Function` i n'agafen tant
+el format nou (`window.SEIENTS_FITXER`) com el vell. Mentre el
+llegeixen, amaguen els seus propis globals, perquè si no un fitxer que
+no toqués semblaria vàlid i "importaria" el que ja hi havia carregat.
+
+Importar no recarrega la pàgina: el carregador torna a publicar
+`SEIENTS` / `HORARI` i la pàgina es repinta sola.
+
+Si treballes amb una còpia local del projecte, també pots deixar els
+fitxers al costat de l'`index.html` i carregar-los amb una etiqueta
+`<script src="els-meus-seients.js">`: llavors manen sobre el que hi hagi
+desat al navegador.
+
+En un **ordinador compartit**, recorda «Oblida-ho aquí» (a baix a la
+dreta) quan acabis.
+
+## Identificadors d'alumne
+
+Cada alumne té tres camps:
 
 ```js
 { id: "1ESOA-7042-01", numero: "01", nom: "Martina" }
@@ -232,9 +283,9 @@ apareix com a "sense seient assignat", sense donar error).
 
 | Fitxer | Contingut |
 |---|---|
-| `alumnes.js` | Dades: grups i llistat d'alumnes (`id`, `numero`, `nom`). Es regenera des d'`alta.html`. |
-| `seients.js` | Dades: disposició de l'aula i quin alumne seu on. Es regenera des de `setup.html`. |
-| `horari.js` | Dades: horari del centre, `MAX_POSITIUS_DIA`, `VALOR_MINIM_TRAM` i `PES_NEGATIU`. Es regenera des de `horari.html` (només la part de l'horari; els tres límits es toquen a mà). |
+| `dades.js` | Carregador de les llistes d'alumnat: les llegeix del teu fitxer o del navegador i publica `GRUPS`. |
+| `seients.js` | Carregador de la disposició de l'aula: publica `DISPOSICIO_AULA` i `SEIENTS`, i exposa `CONFIG_SEIENTS` per desar, importar i exportar. Conté una distribució d'exemple com a alternativa. |
+| `horari.js` | Carregador de l'horari: publica `HORARI` i exposa `CONFIG_HORARI`. També hi viuen les constants del centre (`FRANGES_HORARIES`, `MAX_POSITIUS_DIA`, `VALOR_MINIM_TRAM`, `PES_NEGATIU`), que sí que es toquen a mà. |
 | `positius.js` | Lògica principal: graella, positius i negatius (M1 i M2), trams horaris. |
 | `alta.js` | Lògica de `alta.html`. |
 | `setup.js` | Lògica de `setup.html`. |
@@ -246,23 +297,29 @@ apareix com a "sense seient assignat", sense donar error).
 
 ## Com posar-ho en marxa
 
-Com que `alta.js` i `setup.js` fan `fetch` del propi fitxer de dades per
-poder regenerar-lo, **cal servir els fitxers des d'un servidor local**
-(obrir `index.html` directament amb doble clic no funcionarà per aquestes
-dues pàgines, per les restriccions de `fetch` sobre `file://`). Per
-exemple, des de la carpeta del projecte:
+Cap pàgina fa `fetch` de res: tot es llegeix del navegador o dels fitxers
+que hi carregues, així que obrir `index.html` amb doble clic hauria de
+funcionar. Si t'hi falla la càrrega d'un fitxer (alguns navegadors
+restringeixen què es pot executar des de `file://`), serveix la carpeta
+per http:
 
 ```
 python3 -m http.server 8000
 ```
 
-i obrir `http://localhost:8000/index.html` al navegador.
+i obre `http://localhost:8000/index.html`.
+
+La primera vegada, l'ordre és: **Alta** (crea o carrega les llistes
+d'alumnat) → **Horari** (enganxa la graella de l'Excel i desa-la) →
+**Setup** (decideix qui seu on) → **Positius** (el dia a dia). A partir
+d'aquí ja no cal tornar-hi si no canvia res.
 
 ## Limitacions conegudes
 
 - **Tot es desa al `localStorage` del navegador**: no hi ha núvol ni
   sincronització entre dispositius. Canviar de navegador, d'ordinador, o
-  esborrar dades de navegació esborra els positius no exportats.
+  esborrar dades de navegació esborra els positius no exportats i la
+  configuració que no hagis descarregat com a còpia de seguretat.
 - Els positius s'exporten **un tram a la vegada**, no tots de cop.
 - Reassignar un grup a `alta.html` **desfà les assignacions de seients**
   d'aquell grup (vegeu més amunt).

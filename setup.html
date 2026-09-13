@@ -34,20 +34,30 @@
         <span class="banqueta-pista">
           Arrossega un nom fins a una taula, o torna un alumne aquí per alliberar-li el lloc.
         </span>
+        <button
+          id="boto-buidar-aula"
+          type="button"
+          class="boto-secundari boto-buidar-aula"
+          title="Treu del seu lloc tots els alumnes d'aquest grup de cop"
+        >
+          Buida l'aula
+        </button>
       </div>
       <div id="llista-banqueta" class="banqueta-llista"></div>
     </section>
 
     <section class="targeta-descarrega">
       <span id="comptador-pendents" class="comptador-pendents"></span>
+      <span id="estat-seients" class="estat-seients"></span>
       <div class="targeta-descarrega-botons">
-        <button id="boto-esborrar-tot" type="button" class="boto-secundari">
-          Esborra totes les assignacions
+        <button id="boto-carregar-seients" type="button" class="boto-secundari">
+          Carrega un fitxer…
         </button>
-        <button id="boto-descarregar-config" type="button" disabled>
-          Descarrega seients.js ⭳
+        <button id="boto-descarregar-config" type="button">
+          Còpia de seguretat ⭳
         </button>
       </div>
+      <input id="fitxer-seients" type="file" accept=".js,text/javascript" hidden />
     </section>
 
   </div>
