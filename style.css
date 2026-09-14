@@ -162,19 +162,6 @@ header h1 {
   color: var(--ambre);
 }
 
-#info-horari {
-  display: block;
-  font-size: 12px;
-  color: var(--text-2);
-  margin-bottom: 10px;
-  flex: 0 0 auto;
-}
-
-.info-horari-dia {
-  font-weight: 700;
-  color: var(--text-1);
-}
-
 /* ── Targeta de grup ── */
 
 .targeta-grup {
@@ -203,11 +190,6 @@ header h1 {
   font-size: 17px;
   font-weight: 800;
   color: var(--blau-fosc);
-}
-
-.pista-clic {
-  font-size: 12px;
-  color: var(--text-3);
 }
 
 /* ── Selector de dia i franja (consultar trams passats) ── */

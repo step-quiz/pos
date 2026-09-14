@@ -228,13 +228,6 @@ function textDataLlegible(dataISO) {
 }
 
 /**
- * Retorna un text llegible del dia d'avui, p. ex. "dilluns 3 d'agost".
- */
-function textDataAvui() {
-  return textDataLlegible(dataAvuiISO());
-}
-
-/**
  * Construeix l'identificador únic d'un tram (dia + hora concrets),
  * que és la clau que fem servir per desar i llegir els positius.
  */
@@ -476,35 +469,6 @@ function inicialitzarSelectorGrups() {
   selector.addEventListener("change", () => {
     mostrarGrup(selector.value);
   });
-}
-
-/**
- * Mostra a la capçalera quins trams de classe té el professor avui
- * amb aquest grup (pot no tenir-ne cap, si el consulta fora d'hora).
- */
-function actualitzarInfoHorari() {
-  const contenidor = document.getElementById("info-horari");
-  const trams = tramsHoraris_avui();
-
-  contenidor.textContent = "";
-  const capçalera = document.createElement("span");
-  capçalera.className = "info-horari-dia";
-  capçalera.textContent = `Avui és ${textDataAvui()}.`;
-  contenidor.appendChild(capçalera);
-
-  if (trams.length === 0) {
-    const sense = document.createElement("span");
-    sense.textContent = " Avui no hi ha cap classe a l'horari.";
-    contenidor.appendChild(sense);
-    return;
-  }
-
-  const detall = document.createElement("span");
-  detall.textContent = " Classes d'avui: " +
-    // L'horari i les llistes de classe es desen per separat: pot
-    // referir-se a un grup que ja no existeix, i això no ha de petar.
-    trams.map(t => `${GRUPS[t.grup]?.nom || t.grup} (${t.hora})`).join(" · ");
-  contenidor.appendChild(detall);
 }
 
 /* ----------------------------------------------------------------
@@ -1118,7 +1082,6 @@ function mostrarGrup(grupId) {
 
 function iniciarApp() {
   inicialitzarSelectorGrups();
-  actualitzarInfoHorari();
   inicialitzarToggleM2();
   inicialitzarSelectorTram();
 

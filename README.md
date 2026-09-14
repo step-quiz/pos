@@ -39,6 +39,10 @@ enllaços de la capçalera. Vegeu
 
 ## Assignar positius i negatius: M1 (clic) i M2 (teclat)
 
+La graella d'`index.html` no porta cap text d'ajuda: els dos modes i els
+límits estan documentats aquí, i la pantalla queda per a la feina. El grup
+que toca ara es marca amb un punt (●) al selector de grups.
+
 A la graella d'`index.html`, cada targeta porta el **número de llista**
 davant del nom (`05. Mohamed`). En M2 és exactament el codi que s'ha de
 teclejar, i per això allà es ressalta en blau; en M1 serveix igualment
