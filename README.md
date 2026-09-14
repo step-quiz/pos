@@ -39,6 +39,15 @@ enllaços de la capçalera. Vegeu
 
 ## Assignar positius i negatius: M1 (clic) i M2 (teclat)
 
+A la graella d'`index.html`, cada targeta porta el **número de llista**
+davant del nom (`05. Mohamed`). En M2 és exactament el codi que s'ha de
+teclejar, i per això allà es ressalta en blau; en M1 serveix igualment
+per localitzar l'alumne a la llista de classe. El número es mostra tal
+com està desat, amb les dues xifres, perquè M2 espera sempre dos dígits.
+
+A `setup.html` els números no hi surten: allà l'única cosa que importa
+és on seu cadascú.
+
 Hi ha dues maneres complementàries d'assignar un positiu o un negatiu a un
 alumne, seleccionables amb un interruptor a la capçalera de `index.html`.
 **Només una està activa alhora**: activar M2 desactiva M1, i viceversa. En

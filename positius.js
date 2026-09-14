@@ -671,9 +671,20 @@ function crearTargetaAlumne(grupId, alumne) {
   targeta.className = "alumne";
   targeta.dataset.alumneId = alumne.id;
 
+  // El número de llista va davant del nom, tant en M1 com en M2. En
+  // M2 és el codi que s'ha de teclejar, i tenir-lo a la vista estalvia
+  // haver-se'l de saber de memòria; en M1 serveix igualment per
+  // localitzar l'alumne a la llista de classe. A setup.html, en canvi,
+  // no hi surt: allà només interessa on seu cadascú.
   const nom = document.createElement("span");
   nom.className = "alumne-nom";
-  nom.textContent = alumne.nom;
+
+  const numero = document.createElement("span");
+  numero.className = "alumne-numero";
+  numero.textContent = `${alumne.numero}.`;
+
+  nom.appendChild(numero);
+  nom.appendChild(document.createTextNode(" " + alumne.nom));
 
   // Dos grups de símbols dins del mateix comptador (mai barrejats
   // per ordre d'entrada, només agrupats per tipus): els positius
@@ -704,7 +715,7 @@ function crearTargetaAlumne(grupId, alumne) {
 
     targeta.setAttribute(
       "aria-label",
-      `${alumne.nom}: ${positius} positius i ${negatius} negatius ` +
+      `${alumne.numero}. ${alumne.nom}: ${positius} positius i ${negatius} negatius ` +
       `(valor ${valor}) en aquesta hora`
     );
   }

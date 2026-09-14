@@ -359,6 +359,21 @@ header h1 {
   line-height: 1.15;
 }
 
+/* Número de llista de l'alumne, davant del nom. En M1 només és una
+   referència; en M2 és el codi que s'ha de teclejar, i per això allà
+   es ressalta. Es fa servir xifra tabular perquè els números de dues
+   xifres quedin alineats entre targetes. */
+
+.alumne-numero {
+  color: var(--text-3);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.graella-aula--m2 .alumne-numero {
+  color: var(--blau);
+}
+
 /* El comptador té dos grups de símbols, un per als positius i un
    altre per als negatius, sempre agrupats per tipus (mai barrejats
    per ordre d'entrada) i amb un color diferent cadascun perquè es
