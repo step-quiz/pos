@@ -332,6 +332,13 @@ header h1 {
   justify-content: center;
   gap: 2px;
   min-height: 0;
+  min-width: 0;
+  /* Xarxa de seguretat: res del que hi hagi a dins no ha de poder
+     sortir de la targeta i trepitjar la fila de sota. El comptador ja
+     passa a la forma compacta quan hi ha massa símbols (vegeu
+     MAX_SIMBOLS_COMPTADOR a positius.js), però un nom molt llarg
+     també podria desbordar. */
+  overflow: hidden;
   padding: 4px;
   border: none;
   border-radius: 8px;
@@ -357,6 +364,8 @@ header h1 {
   font-weight: 700;
   text-align: center;
   line-height: 1.15;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 /* Número de llista de l'alumne, davant del nom. En M1 només és una
@@ -390,6 +399,7 @@ header h1 {
   letter-spacing: 1px;
   line-height: 1;
   min-height: 22px;
+  max-width: 100%;
 }
 
 .alumne-comptador-positius {

@@ -665,6 +665,29 @@ function trobarAlumnePerNumero(grupId, numero) {
   return GRUPS[grupId].alumnes.find(a => a.numero === numero);
 }
 
+/**
+ * Quants símbols (positius + negatius junts) caben a la targeta abans
+ * que se'n surtin. Per sota d'aquest nombre es dibuixen un per un
+ * ("+++ -"), que és el que es llegeix millor d'un cop d'ull; a partir
+ * d'aquí es passa a la forma compacta ("7+ 3-"), perquè amb els
+ * símbols repetits el comptador sortia fora de la targeta i es
+ * trepitjava amb la fila de sota.
+ *
+ * El límit per tram és sobre el VALOR (positius - 2 × negatius), no
+ * sobre el nombre de símbols, així que aquestes acumulacions són
+ * perfectament possibles: 7 positius i 3 negatius donen valor +1.
+ */
+const MAX_SIMBOLS_COMPTADOR = 5;
+
+/**
+ * Text d'un dels dos grups del comptador. Un grup a zero no escriu
+ * res, per no ocupar espai quan només hi ha positius.
+ */
+function textComptador(quantitat, simbol, compacte) {
+  if (quantitat === 0) return "";
+  return compacte ? `${quantitat}${simbol}` : simbol.repeat(quantitat);
+}
+
 function crearTargetaAlumne(grupId, alumne) {
   const targeta = document.createElement("button");
   targeta.type = "button";
@@ -707,8 +730,10 @@ function crearTargetaAlumne(grupId, alumne) {
     const { positius, negatius } = registreDelTram(grupId, alumne.id, tram);
     const valor = positius - PES_NEGATIU * negatius;
 
-    comptadorPositius.textContent = "+".repeat(positius);
-    comptadorNegatius.textContent = "-".repeat(negatius);
+    const compacte = positius + negatius > MAX_SIMBOLS_COMPTADOR;
+
+    comptadorPositius.textContent = textComptador(positius, "+", compacte);
+    comptadorNegatius.textContent = textComptador(negatius, "-", compacte);
 
     targeta.classList.toggle("alumne--maxim", valor >= MAX_POSITIUS_DIA);
     targeta.classList.toggle("alumne--minim", valor <= VALOR_MINIM_TRAM);

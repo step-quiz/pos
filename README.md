@@ -48,6 +48,12 @@ com està desat, amb les dues xifres, perquè M2 espera sempre dos dígits.
 A `setup.html` els números no hi surten: allà l'única cosa que importa
 és on seu cadascú.
 
+El comptador de cada targeta dibuixa els símbols un per un (`+++ -`)
+mentre en caben; a partir de sis passa a la forma compacta (`7+ 3-`).
+Com que el límit per tram és sobre el valor i no sobre el nombre de
+símbols, acumulacions com 7 positius i 3 negatius (valor +1) són
+possibles i abans se sortien de la targeta.
+
 Hi ha dues maneres complementàries d'assignar un positiu o un negatiu a un
 alumne, seleccionables amb un interruptor a la capçalera de `index.html`.
 **Només una està activa alhora**: activar M2 desactiva M1, i viceversa. En
