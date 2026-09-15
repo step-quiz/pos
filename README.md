@@ -49,8 +49,9 @@ teclejar, i per això allà es ressalta en blau; en M1 serveix igualment
 per localitzar l'alumne a la llista de classe. El número es mostra tal
 com està desat, amb les dues xifres, perquè M2 espera sempre dos dígits.
 
-A `setup.html` els números no hi surten: allà l'única cosa que importa
-és on seu cadascú.
+A `setup.html` els números hi surten igualment: als seients, a les fitxes
+de la banqueta i al desplegable d'assignació. Amb només el nom de pila
+costava de casar cada fitxa amb la llista de classe.
 
 El comptador de cada targeta dibuixa els símbols un per un (`+++ -`)
 mentre en caben; a partir de sis passa a la forma compacta (`7+ 3-`).

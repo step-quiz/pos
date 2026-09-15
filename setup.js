@@ -178,6 +178,33 @@ function crearSeientEl(fila, taula, costat) {
   return seientEl;
 }
 
+/**
+ * Text pla d'un alumne, amb el número de llista davant ("03. Saif").
+ * Es fa servir allà on no es pot posar marcatge, com als <option> del
+ * desplegable. El número es mostra tal com està desat, amb les dues
+ * xifres, perquè és el mateix que es tecleja a la graella de positius
+ * en mode M2.
+ */
+function etiquetaAlumne(alumne) {
+  return `${alumne.numero}. ${alumne.nom}`;
+}
+
+/**
+ * Escriu "03. Saif" dins d'un element, amb el número en un <span>
+ * propi perquè es pugui pintar més fluix que el nom (.alumne-numero,
+ * compartit amb la graella de positius).
+ */
+function escriureNomAmbNumero(element, alumne) {
+  element.textContent = "";
+
+  const numero = document.createElement("span");
+  numero.className = "alumne-numero";
+  numero.textContent = `${alumne.numero}.`;
+
+  element.appendChild(numero);
+  element.appendChild(document.createTextNode(" " + alumne.nom));
+}
+
 function refrescarSeientEl(seientEl, seientId) {
   const alumneId = assignacions[seientId];
   const alumne = alumneId
@@ -185,12 +212,16 @@ function refrescarSeientEl(seientEl, seientId) {
     : null;
 
   seientEl.classList.toggle("seient--buit", !alumne);
-  seientEl.textContent = alumne ? alumne.nom : "+ assigna";
+  if (alumne) {
+    escriureNomAmbNumero(seientEl, alumne);
+  } else {
+    seientEl.textContent = "+ assigna";
+  }
   seientEl.draggable = Boolean(alumne);
   seientEl.setAttribute(
     "aria-label",
     alumne
-      ? `${alumne.nom}. Clica per canviar, o arrossega'l a una altra taula.`
+      ? `${etiquetaAlumne(alumne)}. Clica per canviar, o arrossega'l a una altra taula.`
       : "Seient buit. Clica per assignar un alumne, o arrossega-hi un nom."
   );
 }
@@ -227,10 +258,11 @@ function renderitzarBanqueta() {
 function crearFitxaAlumne(alumne) {
   const fitxa = document.createElement("div");
   fitxa.className = "fitxa-alumne";
-  fitxa.textContent = alumne.nom;
+  escriureNomAmbNumero(fitxa, alumne);
   fitxa.draggable = true;
   fitxa.dataset.alumneId = alumne.id;
-  fitxa.setAttribute("aria-label", `${alumne.nom}, sense seient. Arrossega'l fins a una taula.`);
+  fitxa.setAttribute("aria-label",
+    `${etiquetaAlumne(alumne)}, sense seient. Arrossega'l fins a una taula.`);
 
   fitxa.addEventListener("dragstart", (event) => {
     iniciarArrossegament(event, alumne.id, null);
@@ -433,14 +465,14 @@ function obrirSelectorSeient(seientEl, seientId) {
   if (alumneActual) {
     const opcioActual = document.createElement("option");
     opcioActual.value = alumneActual.id;
-    opcioActual.textContent = alumneActual.nom;
+    opcioActual.textContent = etiquetaAlumne(alumneActual);
     select.appendChild(opcioActual);
   }
 
   for (const alumne of disponibles) {
     const opcio = document.createElement("option");
     opcio.value = alumne.id;
-    opcio.textContent = alumne.nom;
+    opcio.textContent = etiquetaAlumne(alumne);
     select.appendChild(opcio);
   }
 
