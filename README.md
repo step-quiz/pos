@@ -281,10 +281,11 @@ Cada alumne té tres camps:
 { id: "1ESOA-7042-01", numero: "01", nom: "Martina" }
 ```
 
-- **`id`**: identificador intern, estable dins d'una mateixa alta però
-  que canvia si es torna a donar d'alta el grup (porta un sufix únic de
-  cada alta, per no col·lidir mai amb l'anterior). El fan servir
-  `seients.js` i les dades de positius desades.
+- **`id`**: identificador intern i estable. El fan servir `seients.js`
+  i les dades de positius desades. Quan es torna a donar d'alta un grup,
+  cada alumne que continua a la llista **conserva el seu `id`** (vegeu
+  més avall); només els alumnes nous en reben un de nou, amb un sufix
+  que no col·lideix mai amb cap `id` existent.
 - **`numero`**: cadena de dues xifres (`"01"`–`"30"`), la posició de
   l'alumne dins la llista tal com el professor se la sap de memòria.
   A diferència de l'`id`, **mai canvia de forma imprevisible**: sempre
@@ -293,11 +294,20 @@ Cada alumne té tres camps:
 - **`nom`**: només el nom de pila (mai el cognom), tal com es mostra a
   la graella.
 
-**Conseqüència pràctica important:** si es torna a donar d'alta un grup
-(nova llista d'alumnes des d'`alta.html`), els `id` canvien i, per tant,
-**cal tornar a fer `setup.html`** per assignar seients de nou — les
-assignacions antigues queden òrfenes silenciosament (l'alumne simplement
-apareix com a "sense seient assignat", sense donar error).
+**Tornar a donar d'alta un grup no desfà el Setup.** A `alta.html`,
+cada nom de la llista nova s'emparella amb un alumne de l'antiga:
+
+1. mateix nom (sense comptar majúscules, accents ni espais) → es manté;
+2. nom molt semblant (una o dues lletres de diferència, o «Maria» →
+   «Maria José») → es considera una correcció del nom;
+3. res semblant → alumne nou.
+
+La previsualització marca cada cas («abans: Martna», «nou») i, amb un
+desplegable, deixa corregir l'emparellament a mà (per exemple «Pep» →
+«Josep»). Els alumnes emparellats conserven `id`, seient i positius; el
+`numero` es recalcula segons la nova posició. Els que no s'emparellen
+amb ningú surten del grup (es demana confirmació) i el seu seient queda
+lliure. Després només cal passar per `setup.html` per seure els nous.
 
 ## Fitxers del projecte
 

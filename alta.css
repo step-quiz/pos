@@ -208,3 +208,59 @@
   padding: 9px 13px;
   margin-top: 10px;
 }
+
+/* ------------------------------------------------------------------
+   Què passarà amb cada nom en tornar a donar d'alta un grup
+   (es manté / nom corregit / nou) i qui en surt.
+   ------------------------------------------------------------------ */
+
+.previsualitzacio-llista li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.previsualitzacio-nom {
+  flex: 1 1 auto;
+}
+
+.previsualitzacio-etiqueta {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 100px;
+}
+
+.previsualitzacio-nou .previsualitzacio-etiqueta {
+  color: var(--verd);
+  background: var(--verd-suau);
+}
+
+.previsualitzacio-corregit .previsualitzacio-etiqueta,
+.previsualitzacio-manual .previsualitzacio-etiqueta {
+  color: var(--ambre);
+  background: #fbf1de;
+}
+
+.previsualitzacio-vincle {
+  font: inherit;
+  font-size: 11px;
+  padding: 1px 4px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  max-width: 14ch;
+}
+
+.previsualitzacio-baixes {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vermell);
+  background: var(--vermell-suau);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-top: 6px;
+}

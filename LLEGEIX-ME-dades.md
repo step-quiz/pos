@@ -103,7 +103,7 @@ He passat 34 comprovacions automàtiques sobre les pàgines reals amb jsdom, i t
 
 - `GRUPS` té la mateixa forma que tenia amb `alumnes.js`, i `positius.js` omple el selector i pinta el títol sense cap canvi.
 - El fitxer generat es torna a llegir i conserva ids, números i noms exactament (comparació byte a byte de l'estructura).
-- Els ids nous d'una alta porten sufix nou i no repeteixen mai els d'una alta anterior.
+- En tornar a donar d'alta un grup, els alumnes que continuen (encara que se'ls corregeixi el nom o canviïn de posició) conserven l'id i, per tant, el seient i els positius. Només els alumnes nous reben id nou, amb un sufix que no repeteix cap id existent.
 - La previsualització neteja línies buides i columnes de més enganxades del full de càlcul.
 - Es rebutgen amb un missatge clar: un `alumnes.js` antic, un fitxer sense grups i un fitxer amb un alumne incomplet.
 - Sense dades, l'aplicació espera en comptes de petar. `dades.js` atura la inicialització de la resta amb `stopImmediatePropagation()`, per no haver de posar comprovacions a cinc fitxers.
