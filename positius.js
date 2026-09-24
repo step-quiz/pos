@@ -270,13 +270,27 @@ function horesAmbDades(grupId, dataISO) {
 }
 
 /**
- * Totes les franges que té sentit oferir per a un grup i un dia:
- * primer les de l'horari, després les que ja tenen dades desades i
- * no hi surten, i sempre HORA_FORA_HORARI al final.
+ * Totes les franges horàries del centre per a un dia (1a hora, 2a
+ * hora, etc., segons FRANGES_HORARIES), en el mateix format de text
+ * que fa servir la resta de l'aplicació. Independent del grup: surt
+ * de la configuració del centre, no de qui té classe.
+ */
+function horesDelCentre() {
+  return FRANGES_HORARIES.map(f => textFranjaHoraria(f.numero));
+}
+
+/**
+ * Totes les franges que té sentit oferir per a un grup i un dia: les
+ * del centre (independentment de si aquest grup hi té classe),
+ * seguides de les que ja tenen dades desades i no hi surten (per si
+ * l'horari del centre ha canviat des de llavors), i sempre
+ * HORA_FORA_HORARI al final. Mostrar totes les del centre —no només
+ * les pròpies del grup— permet consultar o corregir un tram encara
+ * que aquell dia el grup no hi tingui classe.
  */
 function horesDisponibles(grupId, dataISO) {
   return [...new Set([
-    ...horesSegonsHorari(grupId, dataISO),
+    ...horesDelCentre(),
     ...horesAmbDades(grupId, dataISO),
     HORA_FORA_HORARI
   ])];
