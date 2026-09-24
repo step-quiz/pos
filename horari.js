@@ -47,7 +47,7 @@
    * amb 0 negatius, aquest límit equival simplement al nombre màxim de
    * positius d'un tram, que és l'ús original d'aquesta constant.
    */
-  const MAX_POSITIUS_DIA = 3;
+  const MAX_POSITIUS_DIA = 10;
 
   /**
    * Valor mínim (el més negatiu) que pot arribar a tenir un alumne en
