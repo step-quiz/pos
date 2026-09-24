@@ -283,15 +283,90 @@ function horesDisponibles(grupId, dataISO) {
 }
 
 /**
- * Quina franja s'ha de mostrar per defecte en obrir un dia: la
- * primera classe que l'horari diu que hi havia; si aquell dia
- * l'horari no en diu cap, la primera que tingui dades desades; i si
- * no hi ha res de res, HORA_FORA_HORARI (el mateix comportament que
- * tenia l'aplicació abans d'existir el selector de dia).
+ * Retorna l'hora actual en minuts des de mitjanit (p. ex. 8:15 -> 495),
+ * per poder-la comparar amb l'"inici" de FRANGES_HORARIES.
+ */
+function araEnMinuts() {
+  const ara = new Date();
+  return ara.getHours() * 60 + ara.getMinutes();
+}
+
+/**
+ * Converteix un "HH:MM" (com els d'"inici" a FRANGES_HORARIES) a
+ * minuts des de mitjanit, per poder-lo comparar amb araEnMinuts().
+ */
+function horaAMinuts(horaHHMM) {
+  const [h, m] = horaHHMM.split(":").map(Number);
+  return h * 60 + m;
+}
+
+/**
+ * Donada una franja tal com surt de l'horari (el seu text llegible,
+ * p. ex. "3a hora (10:05)"), retorna els minuts des de mitjanit en
+ * què comença, buscant-la a FRANGES_HORARIES pel seu "numero". Si no
+ * es troba (p. ex. HORA_FORA_HORARI), retorna null.
+ */
+function iniciFranjaEnMinuts(hora) {
+  const franja = FRANGES_HORARIES.find(f => textFranjaHoraria(f.numero) === hora);
+  return franja ? horaAMinuts(franja.inici) : null;
+}
+
+/**
+ * D'entre tots els trams d'avui (de qualsevol grup, no d'un en
+ * concret), retorna el que toca ara: el primer que encara no hagi
+ * començat; si tots ja han començat, el darrer del dia. És qui
+ * "mana" en obrir l'app — primer es decideix la franja horària i
+ * després, a partir d'ella, el grup que hi toca (mostrarGrup crida
+ * horaPerDefecte, que ja coincidirà amb aquesta franja perquè és la
+ * pròpia d'aquest grup en aquesta hora). Retorna null si avui no hi
+ * ha cap classe a l'horari.
+ */
+function tramMesProperAvui() {
+  const trams = tramsHoraris_avui();
+  if (trams.length === 0) return null;
+
+  const araMin = araEnMinuts();
+  const proper = trams.find(tram => {
+    const iniciMin = iniciFranjaEnMinuts(tram.hora);
+    return iniciMin !== null && iniciMin > araMin;
+  });
+
+  return proper || trams[trams.length - 1];
+}
+
+/**
+ * Quina franja s'ha de mostrar per defecte en obrir un dia.
+ *
+ * Si el dia és avui: d'entre les franges de l'horari d'avui, la
+ * primera que encara no hagi començat (mirant l'hora del rellotge);
+ * si totes ja han començat, la darrera del dia (la classe que toca
+ * ara mateix o la més recent). Així, en obrir l'app entre hores, ja
+ * surt seleccionat el tram on tocarà posar positius.
+ *
+ * Si el dia no és avui (o l'horari d'avui no diu res): la primera
+ * classe que l'horari diu que hi havia; si tampoc n'hi ha, la
+ * primera que tingui dades desades; i si no hi ha res de res,
+ * HORA_FORA_HORARI (el mateix comportament que tenia l'aplicació
+ * abans d'existir el selector de dia).
  */
 function horaPerDefecte(grupId, dataISO) {
   const deHorari = horesSegonsHorari(grupId, dataISO);
-  if (deHorari.length > 0) return deHorari[0];
+
+  if (deHorari.length > 0) {
+    if (dataISO === dataAvuiISO()) {
+      const araMin = araEnMinuts();
+      const properaFutura = deHorari.find(hora => {
+        const iniciMin = iniciFranjaEnMinuts(hora);
+        return iniciMin !== null && iniciMin > araMin;
+      });
+      if (properaFutura) return properaFutura;
+
+      // Totes les franges d'avui ja han començat: ens quedem amb la
+      // darrera (la que toca ara mateix o la més recent).
+      return deHorari[deHorari.length - 1];
+    }
+    return deHorari[0];
+  }
 
   const ambDades = horesAmbDades(grupId, dataISO);
   if (ambDades.length > 0) return ambDades[0];
@@ -462,9 +537,10 @@ function inicialitzarSelectorGrups() {
     selector.appendChild(opcio);
   }
 
-  // Per defecte, seleccionem el primer grup que toca avui, si n'hi ha.
-  const primerGrupAvui = tramsHoraris_avui()[0]?.grup;
-  selector.value = primerGrupAvui || Object.keys(GRUPS)[0];
+  // Per defecte, seleccionem el grup que toca ara mateix segons
+  // l'horari d'avui (la franja més propera, vegeu tramMesProperAvui).
+  const grupAra = tramMesProperAvui()?.grup;
+  selector.value = grupAra || Object.keys(GRUPS)[0];
 
   selector.addEventListener("change", () => {
     mostrarGrup(selector.value);
@@ -1084,6 +1160,13 @@ function iniciarApp() {
   inicialitzarSelectorGrups();
   inicialitzarToggleM2();
   inicialitzarSelectorTram();
+
+  // La franja horària mana sobre el grup: primer es decideix quina
+  // classe toca ara (tramMesProperAvui), i d'aquí surten tant el
+  // grup inicial com l'hora inicial. Es fixa horaActiva abans de
+  // mostrarGrup perquè refrescarSelectorHora() no la recalculi.
+  const tramActual = tramMesProperAvui();
+  if (tramActual) horaActiva = tramActual.hora;
 
   const grupInicial = document.getElementById("selector-grup").value;
   mostrarGrup(grupInicial);
