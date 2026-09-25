@@ -257,6 +257,16 @@ function horesSegonsHorari(grupId, dataISO) {
 }
 
 /**
+ * Quin grup té classe en una franja i un dia concrets, segons
+ * HORARI. Retorna null si aquell dia ningú hi té classe en aquesta
+ * hora (p. ex. HORA_FORA_HORARI, o un forat de l'horari).
+ */
+function grupPerHora(hora, dataISO) {
+  const tram = tramsHorarisDelDia(dataISO).find(t => t.hora === hora);
+  return tram ? tram.grup : null;
+}
+
+/**
  * Franges d'un dia en què aquest grup ja té algun registre desat.
  * Serveix per no amagar mai un tram antic: encara que l'horari hagi
  * canviat des de llavors (o que es desés sota HORA_FORA_HORARI), la
@@ -557,6 +567,11 @@ function inicialitzarSelectorGrups() {
   selector.value = grupAra || Object.keys(GRUPS)[0];
 
   selector.addEventListener("change", () => {
+    // En triar un grup a mà, saltem sempre a la seva pròpia franja
+    // del dia actiu (no només quan l'hora que hi havia no sigui
+    // vàlida): si triem "1ESO-B", volem anar a la seva hora d'avui,
+    // encara que "10:05" també fos una opció vàlida del desplegable.
+    horaActiva = horaPerDefecte(selector.value, dataActiva);
     mostrarGrup(selector.value);
   });
 }
@@ -595,6 +610,19 @@ function inicialitzarSelectorTram() {
 
   selectorHora.addEventListener("change", () => {
     horaActiva = selectorHora.value;
+
+    // Si en aquesta franja i dia hi ha un grup amb classe, hi
+    // saltem (com passa amb el "Grup:", és el tram qui mana). Si no
+    // n'hi ha cap (forat de l'horari, o HORA_FORA_HORARI), ens
+    // quedem amb el grup que ja hi havia i només canviem l'hora.
+    const grup = grupPerHora(horaActiva, dataActiva);
+    if (grup && grup !== grupActiu) {
+      const selectorGrup = document.getElementById("selector-grup");
+      if (selectorGrup) selectorGrup.value = grup;
+      mostrarGrup(grup);
+      return;
+    }
+
     mostrarTramActiu();
   });
 
